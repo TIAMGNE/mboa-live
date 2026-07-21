@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+html, body {
+  background: #0B1210;
+  color: #F5F3EE;
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+::selection {
+  background: #E8B33D;
+  color: #0B1210;
+}
+
+/* Focus clavier toujours visible, jamais supprimé */
+:focus-visible {
+  outline: 2px solid #E8B33D;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Leaflet : quelques surcharges pour coller au thème sombre */
+.leaflet-container {
+  background: #0B1210 !important;
+  font-family: var(--font-body);
+}
+.leaflet-popup-content-wrapper {
+  background: #182420 !important;
+  color: #F5F3EE !important;
+  border-radius: 12px !important;
+}
+.leaflet-popup-tip {
+  background: #182420 !important;
+}
+.leaflet-control-zoom a {
+  background: #182420 !important;
+  color: #F5F3EE !important;
+  border-color: #233129 !important;
+}
+
+.mboa-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
