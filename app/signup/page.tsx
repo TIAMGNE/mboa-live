@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,26 +23,45 @@ export default function SignupPage() {
     setLoading(true);
 
     const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
-      phone: phone || undefined,
-      options: { data: { full_name: fullName } }
+      phone: phone.trim() || undefined,
+      options: { data: { full_name: fullName.trim() } }
     });
 
     if (signUpError) {
       setLoading(false);
-      setError(signUpError.message.includes('already') ? 'Un compte existe déjà avec cet e-mail.' : "L'inscription a échoué. Réessaie.");
+      setError(signUpError.message);
       return;
     }
 
-    if (data.user) {
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        full_name: fullName,
-        city
-      });
+    if (!data.user) {
+      setLoading(false);
+      setError("Le compte n'a pas pu être créé. Réessaie.");
+      return;
     }
 
+    // Confirmation e-mail désactivée : Supabase crée une session immédiatement.
+    if (data.session) {
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: data.user.id,
+        full_name: fullName.trim(),
+        city
+      });
+
+      if (profileError) {
+        setLoading(false);
+        setError(`Compte créé, mais le profil n'a pas pu être enregistré : ${profileError.message}`);
+        return;
+      }
+
+      setLoading(false);
+      setDone(true);
+      return;
+    }
+
+    // Confirmation e-mail activée : on affiche ce message uniquement dans ce cas.
+    setNeedsEmailConfirmation(true);
     setLoading(false);
     setDone(true);
   }
@@ -49,10 +69,27 @@ export default function SignupPage() {
   if (done) {
     return (
       <div className="mx-auto max-w-sm px-5 py-20 text-center">
-        <h1 className="font-display text-2xl font-bold text-ink">Vérifie ta boîte mail 📩</h1>
-        <p className="mt-3 text-sm text-dim">
-          Un e-mail de confirmation vient de t&apos;être envoyé. Clique sur le lien pour activer ton compte MBOA LIVE.
-        </p>
+        {needsEmailConfirmation ? (
+          <>
+            <h1 className="font-display text-2xl font-bold text-ink">Vérifie ta boîte mail 📩</h1>
+            <p className="mt-3 text-sm text-dim">
+              Un e-mail de confirmation vient de t&apos;être envoyé. Clique sur le lien pour activer ton compte MBOA LIVE.
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="font-display text-2xl font-bold text-ink">Compte créé 🎉</h1>
+            <p className="mt-3 text-sm text-dim">
+              Ton compte MBOA LIVE est prêt. Tu peux maintenant te connecter.
+            </p>
+            <Link
+              href="/login"
+              className="mt-6 inline-block rounded-full bg-gold px-6 py-3 font-display text-sm font-bold text-bg"
+            >
+              Se connecter
+            </Link>
+          </>
+        )}
       </div>
     );
   }

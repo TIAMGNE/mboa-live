@@ -94,26 +94,6 @@ Next.js, gratuit pour démarrer) :
    `NEXT_PUBLIC_SUPABASE_ANON_KEY`) dans les réglages du projet Vercel.
 4. Déploie.
 
-## 10. Publier sur le Google Play Store
-
-Le site est maintenant "installable" (PWA) avec sa propre icône. Pour en
-faire une vraie application listée sur le Play Store, sans réécrire le
-code :
-
-1. Va sur **[pwabuilder.com](https://www.pwabuilder.com)**
-2. Colle l'adresse de ton site en ligne (ton URL Vercel, ex.
-   `https://mboa-live.vercel.app`)
-3. Clique sur **"Start"** — l'outil analyse le site automatiquement
-4. Va dans l'onglet **Android** → **"Generate Package"** → télécharge le
-   fichier `.aab` généré
-5. Crée un compte **Google Play Console**
-   ([play.google.com/console](https://play.google.com/console)) — 25$,
-   paiement unique, à vie
-6. Dans la Play Console, crée une nouvelle application, remplis la fiche
-   (nom, description, captures d'écran, icône — déjà dans
-   `public/icons/`), et téléverse le fichier `.aab`
-7. Soumets pour validation (Google prend généralement 1 à 3 jours)
-
 ## Notes importantes
 
 - **"J'aime"** : la V1 ne comprend pas encore de bouton "j'aime" distinct
