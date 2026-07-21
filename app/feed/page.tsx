@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useReports } from '@/lib/useReports';
 import ReportCard from '@/components/ReportCard';
@@ -10,6 +11,14 @@ import ShareButton from '@/components/ShareButton';
 import { timeAgo } from '@/lib/reportUtils';
 
 export default function FeedPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-6xl px-5 py-10 text-sm text-dim">Chargement...</div>}>
+      <FeedContent />
+    </Suspense>
+  );
+}
+
+function FeedContent() {
   const { reports, loading } = useReports();
   const params = useSearchParams();
   const router = useRouter();
