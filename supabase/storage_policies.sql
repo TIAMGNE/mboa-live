@@ -8,12 +8,14 @@
 -- le signalement se publie quand même, mais sans photo/vidéo.
 
 -- Lecture publique (nécessaire pour que les photos/vidéos s'affichent sur le site)
+drop policy if exists "Médias des signalements visibles par tous" on storage.objects;
 create policy "Médias des signalements visibles par tous"
   on storage.objects for select
   using (bucket_id = 'reports-media');
 
 -- Upload réservé aux utilisateurs connectés, uniquement dans leur propre dossier
 -- (le code de l'app range chaque fichier sous userId/nomdefichier)
+drop policy if exists "Un utilisateur connecté peut envoyer ses médias" on storage.objects;
 create policy "Un utilisateur connecté peut envoyer ses médias"
   on storage.objects for insert
   with check (
@@ -25,10 +27,12 @@ create policy "Un utilisateur connecté peut envoyer ses médias"
 -- Bucket "avatars" (photos de profil)
 -- À créer d'abord : Storage → New bucket → nom "avatars" → Public bucket coché
 -- =========================================================
+drop policy if exists "Avatars visibles par tous" on storage.objects;
 create policy "Avatars visibles par tous"
   on storage.objects for select
   using (bucket_id = 'avatars');
 
+drop policy if exists "Un utilisateur connecté peut envoyer son avatar" on storage.objects;
 create policy "Un utilisateur connecté peut envoyer son avatar"
   on storage.objects for insert
   with check (
@@ -36,6 +40,7 @@ create policy "Un utilisateur connecté peut envoyer son avatar"
     and auth.uid()::text = (storage.foldername(name))[1]
   );
 
+drop policy if exists "Un utilisateur connecté peut remplacer son avatar" on storage.objects;
 create policy "Un utilisateur connecté peut remplacer son avatar"
   on storage.objects for update
   using (
@@ -49,10 +54,12 @@ create policy "Un utilisateur connecté peut remplacer son avatar"
 -- (Public simplifie l'affichage ; les liens restent longs et non-devinables,
 -- donc pas indexés/listés nulle part publiquement)
 -- =========================================================
+drop policy if exists "Médias des messages visibles par tous ceux qui ont le lien" on storage.objects;
 create policy "Médias des messages visibles par tous ceux qui ont le lien"
   on storage.objects for select
   using (bucket_id = 'messages-media');
 
+drop policy if exists "Un utilisateur connecté peut envoyer un média de message" on storage.objects;
 create policy "Un utilisateur connecté peut envoyer un média de message"
   on storage.objects for insert
   with check (

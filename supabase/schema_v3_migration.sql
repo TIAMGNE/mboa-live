@@ -13,9 +13,12 @@ create table if not exists favorites (
 
 alter table favorites enable row level security;
 
+drop policy if exists "Un utilisateur voit ses propres favoris" on favorites;
 create policy "Un utilisateur voit ses propres favoris" on favorites
   for select using (auth.uid() = user_id);
+drop policy if exists "Un utilisateur gère ses propres favoris" on favorites;
 create policy "Un utilisateur gère ses propres favoris" on favorites
   for insert with check (auth.uid() = user_id);
+drop policy if exists "Un utilisateur retire ses propres favoris" on favorites;
 create policy "Un utilisateur retire ses propres favoris" on favorites
   for delete using (auth.uid() = user_id);
