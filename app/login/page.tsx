@@ -30,7 +30,7 @@ export default function LoginPage() {
   async function handleOAuth(provider: 'google' | 'facebook') {
     await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/` }
+      options: { redirectTo: `${window.location.origin}/auth/callback` }
     });
   }
 
