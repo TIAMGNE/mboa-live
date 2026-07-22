@@ -36,32 +36,6 @@ body {
   }
 }
 
-/* Retour tactile global : chaque bouton/lien réagit légèrement au clic,
-   pour une sensation plus "app native" partout dans le site. */
-button, a {
-  transition: transform 0.12s ease, opacity 0.12s ease;
-}
-button:active:not(:disabled), a:active {
-  transform: scale(0.96);
-}
-
-/* Transition douce par défaut sur les changements de couleur/bordure
-   (déjà utilisée localement à beaucoup d'endroits, on la rend systématique). */
-button, a, input, textarea {
-  transition-property: transform, opacity, background-color, border-color, color;
-  transition-duration: 0.15s;
-  transition-timing-function: ease;
-}
-
-/* Effet d'apparition doux pour le contenu qui arrive (cartes, listes) */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fadeInUp {
-  animation: fadeInUp 0.35s ease both;
-}
-
 /* Leaflet : quelques surcharges pour coller au thème sombre */
 .leaflet-container {
   background: #0B1210 !important;

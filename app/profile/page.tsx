@@ -56,13 +56,8 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-2xl px-5 py-10">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-line bg-surface font-display text-xl font-bold text-ink">
-            {profile?.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={profile.avatar_url} alt={profile.full_name || ''} className="h-full w-full object-cover" />
-            ) : (
-              initial
-            )}
+          <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-line bg-surface font-display text-xl font-bold text-ink">
+            {initial}
           </span>
           <div>
             <h1 className="font-display text-lg font-bold text-ink">{profile?.full_name || 'Mon profil'}</h1>
@@ -73,8 +68,6 @@ export default function ProfilePage() {
           Déconnexion
         </button>
       </div>
-
-      {profile?.bio && <p className="mt-3 text-sm text-ink">{profile.bio}</p>}
 
       <div className="mt-6 grid grid-cols-3 divide-x divide-line rounded-2xl border border-line bg-surface py-4 text-center">
         <div>

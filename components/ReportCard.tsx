@@ -11,7 +11,7 @@ export default function ReportCard({ report }: { report: Report }) {
   return (
     <Link
       href={`/feed?report=${report.id}`}
-      className="group block animate-fadeInUp overflow-hidden rounded-2xl border border-line bg-surface transition hover:border-red/60 hover:-translate-y-0.5"
+      className="group block overflow-hidden rounded-2xl border border-line bg-surface transition hover:border-red/60"
     >
       {report.media_urls?.[0] && (
         <MediaThumbnail
