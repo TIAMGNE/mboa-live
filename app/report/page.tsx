@@ -8,7 +8,6 @@ import { useAuth } from '@/lib/useAuth';
 import { CATEGORIES, CITIES } from '@/lib/categories';
 import { CityId } from '@/lib/types';
 import PlaceSearch from '@/components/PlaceSearch';
-import CameraCapture from '@/components/CameraCapture';
 
 // Leaflet a besoin du navigateur (window/document) : pas de rendu serveur.
 const LocationPicker = dynamic(() => import('@/components/LocationPicker'), {
@@ -35,8 +34,6 @@ export default function ReportPage() {
   const [placeLabel, setPlaceLabel] = useState<string | null>(null);
   const [mediaKind, setMediaKind] = useState<MediaKind>('photo');
   const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [cameraOpen, setCameraOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -295,64 +292,22 @@ export default function ReportPage() {
             </button>
           </div>
 
-          {previewUrl ? (
-            <div className="relative overflow-hidden rounded-2xl border border-line bg-surface">
-              {mediaKind === 'video' ? (
-                <video src={previewUrl} controls className="h-48 w-full object-cover" />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={previewUrl} alt="Aperçu" className="h-48 w-full object-cover" />
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setFile(null);
-                  setPreviewUrl(null);
-                }}
-                className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-ink"
-                aria-label="Retirer"
-              >
-                ✕
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setCameraOpen(true)}
-                className="flex h-32 flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-sm text-dim"
-              >
-                <span className="text-2xl">📸</span>
-                <span>Utiliser la caméra</span>
-              </button>
-              <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-surface text-sm text-dim">
-                <span className="text-2xl">🖼️</span>
-                <span>Depuis la galerie</span>
-                <input
-                  type="file"
-                  accept={mediaKind === 'video' ? 'video/*' : 'image/*'}
-                  className="hidden"
-                  onChange={e => {
-                    const f = e.target.files?.[0] ?? null;
-                    setFile(f);
-                    setPreviewUrl(f ? URL.createObjectURL(f) : null);
-                  }}
-                />
-              </label>
-            </div>
-          )}
-
-          {cameraOpen && (
-            <CameraCapture
-              mode={mediaKind}
-              onClose={() => setCameraOpen(false)}
-              onCapture={f => {
-                setFile(f);
-                setPreviewUrl(URL.createObjectURL(f));
-                setCameraOpen(false);
-              }}
+          <label className="flex h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-surface text-sm text-dim">
+            {file ? (
+              <span className="px-4 text-center text-ink">📎 {file.name}</span>
+            ) : (
+              <>
+                <span className="text-2xl">📷</span>
+                <span>Ajouter une {mediaKind === 'video' ? 'vidéo' : 'photo'}</span>
+              </>
+            )}
+            <input
+              type="file"
+              accept={mediaKind === 'video' ? 'video/*' : 'image/*'}
+              className="hidden"
+              onChange={e => setFile(e.target.files?.[0] ?? null)}
             />
-          )}
+          </label>
 
           <button
             type="button"

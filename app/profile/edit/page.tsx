@@ -12,7 +12,6 @@ export default function EditProfilePage() {
   const router = useRouter();
 
   const [fullName, setFullName] = useState('');
-  const [bio, setBio] = useState('');
   const [username, setUsername] = useState('');
   const [city, setCity] = useState<CityId | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -25,7 +24,6 @@ export default function EditProfilePage() {
     setFullName(profile.full_name || '');
     setUsername(profile.username || '');
     setCity(profile.city);
-    setBio(profile.bio || '');
     setAvatarPreview(profile.avatar_url);
   }, [profile]);
 
@@ -68,7 +66,6 @@ export default function EditProfilePage() {
       .from('profiles')
       .update({
         full_name: fullName.trim(),
-        bio: bio.trim() || null,
         username: cleanUsername || null,
         city,
         avatar_url: avatarUrl
@@ -156,19 +153,6 @@ export default function EditProfilePage() {
               className="w-full rounded-xl border border-line bg-surface py-3 pl-8 pr-4 text-sm text-ink outline-none focus:border-red"
             />
           </div>
-        </div>
-
-        <div>
-          <label className="mb-2 block font-display text-xs font-bold text-dim" htmlFor="bio">Bio</label>
-          <textarea
-            id="bio"
-            value={bio}
-            onChange={e => setBio(e.target.value.slice(0, 150))}
-            rows={3}
-            placeholder="Une phrase pour te présenter..."
-            className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-red"
-          />
-          <p className="mt-1 text-right text-[11px] text-dim">{bio.length}/150</p>
         </div>
 
         <div>

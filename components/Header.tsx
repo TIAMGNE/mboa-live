@@ -20,7 +20,6 @@ export default function Header() {
         </Link>
 
         <nav className="hidden items-center gap-6 font-display text-sm font-medium text-dim md:flex">
-          <Link href="/search" className="transition hover:text-ink">Rechercher</Link>
           <Link href="/feed" className="transition hover:text-ink">Signalements</Link>
           <Link href="/report" className="transition hover:text-ink">Signaler</Link>
           {user && (
@@ -59,9 +58,6 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3 md:hidden">
-          <Link href="/search" className="text-ink" aria-label="Rechercher">
-            🔍
-          </Link>
           {user && (
             <Link href="/messages" className="relative text-ink" aria-label="Messages">
               💬
