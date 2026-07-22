@@ -27,6 +27,7 @@ export interface Report {
   lng: number;
   media_urls: string[];
   media_type: 'photo' | 'video' | null;
+  is_emergency: boolean;
   status: ReportStatus;
   confirmations_up: number;
   confirmations_down: number;
@@ -42,18 +43,23 @@ export interface Profile {
   id: string;
   full_name: string | null;
   username: string | null;
+  bio: string | null;
   avatar_url: string | null;
   city: CityId | null;
   trust_score: number;
+  interests: string[];
+  onboarded: boolean;
+  deletion_requested_at: string | null;
   is_admin: boolean;
   created_at: string;
 }
 
 export interface Notification {
   id: string;
-  type: 'comment' | 'status' | 'like' | 'system';
+  type: 'comment' | 'status' | 'like' | 'system' | 'new_post' | 'reminder';
   title: string;
   body: string | null;
+  related_report_id: string | null;
   read: boolean;
   created_at: string;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
 import { useNotifications } from '@/lib/useNotifications';
 import { timeAgo } from '@/lib/reportUtils';
@@ -9,20 +10,30 @@ const TYPE_ICON: Record<Notification['type'], string> = {
   status: '⏱️',
   comment: '💬',
   like: '❤️',
-  system: '🔔'
+  system: '🔔',
+  new_post: '📢',
+  reminder: '⏰'
 };
 
 const TYPE_COLOR: Record<Notification['type'], string> = {
   status: 'text-amber',
   comment: 'text-blue-400',
   like: 'text-red',
-  system: 'text-dim'
+  system: 'text-dim',
+  new_post: 'text-green',
+  reminder: 'text-amber'
 };
 
 export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth();
   const { notifications, loading, markAsRead, markAllAsRead } = useNotifications(user?.id);
+  const router = useRouter();
   const hasUnread = notifications.some(n => !n.read);
+
+  function handleClick(n: Notification) {
+    markAsRead(n.id);
+    if (n.related_report_id) router.push(`/feed?report=${n.related_report_id}`);
+  }
 
   if (!authLoading && !user) {
     return (
@@ -60,7 +71,7 @@ export default function NotificationsPage() {
         {notifications.map(n => (
           <button
             key={n.id}
-            onClick={() => markAsRead(n.id)}
+            onClick={() => handleClick(n)}
             className={`flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left transition ${
               n.read ? 'border-line bg-surface' : 'border-red/40 bg-red/5'
             }`}
