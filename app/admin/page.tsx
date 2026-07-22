@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
-import { Report } from '@/lib/types';
+import { Report, ReportStatus } from '@/lib/types';
 import { getCategory } from '@/lib/categories';
-import { timeAgo, reliability } from '@/lib/reportUtils';
+import { timeAgo } from '@/lib/reportUtils';
+import { statusLabel, statusClasses } from '@/lib/statusLabel';
 
 interface Stats {
   users: number;
@@ -13,6 +14,19 @@ interface Stats {
   cities: number;
   confirmations: number;
 }
+
+const STATUS_LEGEND: { status: ReportStatus; text: string }[] = [
+  { status: 'active', text: 'Votre signalement a été reçu et est en attente de traitement.' },
+  { status: 'in_progress', text: 'Votre signalement est en cours de traitement par les autorités.' },
+  { status: 'resolved', text: 'Le problème a été résolu. Merci pour votre engagement.' }
+];
+
+const CYCLE: Record<ReportStatus, ReportStatus> = {
+  active: 'in_progress',
+  in_progress: 'resolved',
+  resolved: 'removed',
+  removed: 'active'
+};
 
 export default function AdminPage() {
   const { profile, loading } = useAuth();
@@ -43,9 +57,10 @@ export default function AdminPage() {
     loadAll();
   }, [profile]);
 
-  async function removeReport(id: string) {
-    await supabase.from('reports').update({ status: 'removed' }).eq('id', id);
-    setReports(prev => prev.filter(r => r.id !== id));
+  async function cycleStatus(report: Report) {
+    const nextStatus = CYCLE[report.status];
+    setReports(prev => prev.map(r => (r.id === report.id ? { ...r, status: nextStatus } : r)));
+    await supabase.from('reports').update({ status: nextStatus }).eq('id', report.id);
   }
 
   if (loading) return null;
@@ -72,7 +87,20 @@ export default function AdminPage() {
         <StatCard label="Confirmations" value={stats?.confirmations} />
       </div>
 
+      <h2 className="mt-10 font-display text-lg font-bold text-ink">Statuts des signalements</h2>
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+        {STATUS_LEGEND.map(({ status, text }) => (
+          <div key={status} className="rounded-2xl border border-line bg-surface p-4">
+            <span className={`inline-block rounded-full border px-2.5 py-1 font-display text-[11px] font-bold ${statusClasses(status)}`}>
+              {statusLabel(status)}
+            </span>
+            <p className="mt-2 text-xs text-dim">{text}</p>
+          </div>
+        ))}
+      </div>
+
       <h2 className="mt-10 font-display text-lg font-bold text-ink">Modération des signalements</h2>
+      <p className="mt-1 text-xs text-dim">Clique sur le statut d&apos;un signalement pour le faire avancer à l&apos;étape suivante.</p>
       <div className="mt-4 overflow-hidden rounded-2xl border border-line">
         <table className="w-full text-left text-sm">
           <thead className="bg-surface text-xs uppercase text-dim">
@@ -80,9 +108,8 @@ export default function AdminPage() {
               <th className="px-4 py-3">Titre</th>
               <th className="px-4 py-3">Catégorie</th>
               <th className="px-4 py-3">Ville</th>
-              <th className="px-4 py-3">Fiabilité</th>
               <th className="px-4 py-3">Publié</th>
-              <th className="px-4 py-3"></th>
+              <th className="px-4 py-3">Statut</th>
             </tr>
           </thead>
           <tbody>
@@ -91,14 +118,14 @@ export default function AdminPage() {
                 <td className="px-4 py-3 font-medium text-ink">{r.title}</td>
                 <td className="px-4 py-3 text-dim">{getCategory(r.category_id).label}</td>
                 <td className="px-4 py-3 text-dim">{r.city_id === 'douala' ? 'Douala' : 'Yaoundé'}</td>
-                <td className="px-4 py-3 text-dim">{reliability(r)}%</td>
                 <td className="px-4 py-3 text-dim">{timeAgo(r.created_at)}</td>
                 <td className="px-4 py-3 text-right">
                   <button
-                    onClick={() => removeReport(r.id)}
-                    className="rounded-full border border-red/40 px-3 py-1 text-xs font-semibold text-red hover:bg-red/10"
+                    onClick={() => cycleStatus(r)}
+                    className={`rounded-full border px-3 py-1 font-display text-[11px] font-bold transition ${statusClasses(r.status)}`}
+                    title="Cliquer pour changer le statut"
                   >
-                    Supprimer
+                    {statusLabel(r.status)}
                   </button>
                 </td>
               </tr>
@@ -113,7 +140,7 @@ export default function AdminPage() {
 function StatCard({ label, value }: { label: string; value?: number }) {
   return (
     <div className="rounded-2xl border border-line bg-surface p-5">
-      <p className="font-display text-3xl font-bold text-gold">{value ?? '—'}</p>
+      <p className="font-display text-3xl font-bold text-red">{value ?? '—'}</p>
       <p className="mt-1 text-xs text-dim">{label}</p>
     </div>
   );

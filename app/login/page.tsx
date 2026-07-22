@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import FormField from '@/components/FormField';
+import Logo from '@/components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,60 +27,72 @@ export default function LoginPage() {
     router.push('/');
   }
 
-  async function handleGoogle() {
+  async function handleOAuth(provider: 'google' | 'facebook') {
     await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider,
       options: { redirectTo: `${window.location.origin}/` }
     });
   }
 
   return (
-    <div className="mx-auto max-w-sm px-5 py-16">
-      <h1 className="font-display text-2xl font-bold text-ink">Connexion</h1>
-      <p className="mt-1 text-sm text-dim">Accède à ton compte MBOA LIVE.</p>
-
-      <button
-        onClick={handleGoogle}
-        type="button"
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-line py-3 font-display text-sm font-bold text-ink transition hover:border-gold"
-      >
-        Continuer avec Google
-      </button>
-
-      <div className="my-6 flex items-center gap-3 text-xs text-dim">
-        <span className="h-px flex-1 bg-line" /> ou <span className="h-px flex-1 bg-line" />
+    <div className="mx-auto max-w-sm px-5 py-14">
+      <div className="flex justify-center">
+        <Logo size={48} />
       </div>
+      <h1 className="mt-5 text-center font-display text-2xl font-bold text-ink">Connexion</h1>
+      <p className="mt-1 text-center text-sm text-dim">Accède à ton compte MBOA LIVE.</p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
+      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        <FormField
+          icon="mail"
           type="email"
           required
           value={email}
           onChange={e => setEmail(e.target.value)}
           placeholder="E-mail"
-          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-gold"
         />
-        <input
-          type="password"
+        <FormField
+          icon="lock"
+          isPassword
           required
           value={password}
           onChange={e => setPassword(e.target.value)}
           placeholder="Mot de passe"
-          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-gold"
         />
         {error && <p className="text-sm text-red-light">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-gold py-3 font-display text-sm font-bold text-bg disabled:opacity-60"
+          className="w-full rounded-full bg-red py-3 font-display text-sm font-bold text-ink disabled:opacity-60"
         >
           {loading ? 'Connexion...' : 'Se connecter'}
         </button>
       </form>
 
+      <div className="my-6 flex items-center gap-3 text-xs text-dim">
+        <span className="h-px flex-1 bg-line" /> ou continuer avec <span className="h-px flex-1 bg-line" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => handleOAuth('google')}
+          type="button"
+          className="rounded-full border border-line py-2.5 font-display text-xs font-bold text-ink transition hover:border-red"
+        >
+          Google
+        </button>
+        <button
+          onClick={() => handleOAuth('facebook')}
+          type="button"
+          className="rounded-full border border-line py-2.5 font-display text-xs font-bold text-ink transition hover:border-red"
+        >
+          Facebook
+        </button>
+      </div>
+
       <p className="mt-6 text-center text-sm text-dim">
         Pas encore de compte ?{' '}
-        <Link href="/signup" className="font-semibold text-gold">
+        <Link href="/signup" className="font-semibold text-red">
           Inscris-toi
         </Link>
       </p>

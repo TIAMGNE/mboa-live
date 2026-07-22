@@ -25,7 +25,7 @@ export function reliability(report: Report): number {
 
   // Les catégories "événement/promo/commerce" décroissent plus lentement
   // que "embouteillage/accident" qui deviennent vite obsolètes.
-  const isFast = ['traffic', 'accident', 'road', 'incident', 'power', 'water', 'flood'].includes(report.category_id);
+  const isFast = ['voirie', 'eclairage', 'eau'].includes(report.category_id);
   const halfLife = isFast ? 3 : 24; // heures avant que la fiabilité perde ~50%
   const decay = Math.pow(0.5, ageHours / halfLife);
 

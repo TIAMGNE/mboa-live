@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { CITIES } from '@/lib/categories';
 import { CityId } from '@/lib/types';
+import FormField from '@/components/FormField';
+import Logo from '@/components/Logo';
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
@@ -41,7 +43,6 @@ export default function SignupPage() {
       return;
     }
 
-    // Confirmation e-mail désactivée : Supabase crée une session immédiatement.
     if (data.session) {
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: data.user.id,
@@ -60,7 +61,6 @@ export default function SignupPage() {
       return;
     }
 
-    // Confirmation e-mail activée : on affiche ce message uniquement dans ce cas.
     setNeedsEmailConfirmation(true);
     setLoading(false);
     setDone(true);
@@ -84,7 +84,7 @@ export default function SignupPage() {
             </p>
             <Link
               href="/login"
-              className="mt-6 inline-block rounded-full bg-gold px-6 py-3 font-display text-sm font-bold text-bg"
+              className="mt-6 inline-block rounded-full bg-red px-6 py-3 font-display text-sm font-bold text-ink"
             >
               Se connecter
             </Link>
@@ -95,42 +95,46 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm px-5 py-16">
-      <h1 className="font-display text-2xl font-bold text-ink">Créer un compte</h1>
-      <p className="mt-1 text-sm text-dim">Rejoins la communauté MBOA LIVE.</p>
+    <div className="mx-auto max-w-sm px-5 py-14">
+      <div className="flex justify-center">
+        <Logo size={48} />
+      </div>
+      <h1 className="mt-5 text-center font-display text-2xl font-bold text-ink">Inscription</h1>
+      <p className="mt-1 text-center text-sm text-dim">Créez votre compte MBOA LIVE.</p>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <input
+      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        <FormField
+          icon="user"
           required
           value={fullName}
           onChange={e => setFullName(e.target.value)}
           placeholder="Nom complet"
-          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-gold"
         />
-        <input
+        <FormField
+          icon="mail"
           type="email"
           required
           value={email}
           onChange={e => setEmail(e.target.value)}
-          placeholder="E-mail"
-          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-gold"
+          placeholder="Email"
         />
-        <input
+        <FormField
+          icon="phone"
           type="tel"
           value={phone}
           onChange={e => setPhone(e.target.value)}
           placeholder="Téléphone (optionnel)"
-          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-gold"
         />
-        <input
-          type="password"
+        <FormField
+          icon="lock"
+          isPassword
           required
           minLength={6}
           value={password}
           onChange={e => setPassword(e.target.value)}
           placeholder="Mot de passe (6 caractères min.)"
-          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-gold"
         />
+
         <div>
           <label className="mb-2 block font-display text-xs font-bold text-dim">Ta ville</label>
           <div className="flex gap-2">
@@ -140,7 +144,7 @@ export default function SignupPage() {
                 key={c.id}
                 onClick={() => setCity(c.id)}
                 className={`rounded-full border px-3 py-1.5 font-display text-xs font-semibold ${
-                  city === c.id ? 'border-gold bg-gold/15 text-gold' : 'border-line text-dim'
+                  city === c.id ? 'border-red bg-red/15 text-red' : 'border-line text-dim'
                 }`}
               >
                 {c.name}
@@ -148,22 +152,43 @@ export default function SignupPage() {
             ))}
           </div>
         </div>
+
         {error && <p className="text-sm text-red-light">{error}</p>}
+
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-gold py-3 font-display text-sm font-bold text-bg disabled:opacity-60"
+          className="w-full rounded-full bg-red py-3 font-display text-sm font-bold text-ink disabled:opacity-60"
         >
-          {loading ? 'Création...' : 'Créer mon compte'}
+          {loading ? 'Création...' : "S'inscrire"}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-dim">
-        Déjà inscrit ?{' '}
-        <Link href="/login" className="font-semibold text-gold">
-          Connecte-toi
+        Déjà un compte ?{' '}
+        <Link href="/login" className="font-semibold text-red">
+          Se connecter
         </Link>
       </p>
+
+      <div className="my-6 flex items-center gap-3 text-xs text-dim">
+        <span className="h-px flex-1 bg-line" /> ou continuer avec <span className="h-px flex-1 bg-line" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          className="rounded-full border border-line py-2.5 font-display text-xs font-bold text-ink transition hover:border-red"
+        >
+          Google
+        </button>
+        <button
+          type="button"
+          className="rounded-full border border-line py-2.5 font-display text-xs font-bold text-ink transition hover:border-red"
+        >
+          Facebook
+        </button>
+      </div>
     </div>
   );
 }

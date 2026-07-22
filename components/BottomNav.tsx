@@ -2,22 +2,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/useAuth';
+import { useUnreadCount } from '@/lib/useNotifications';
 
 const ITEMS = [
   { href: '/', label: 'Accueil', icon: HomeIcon },
-  { href: '/map', label: 'Carte', icon: MapIcon },
+  { href: '/feed', label: 'Signalements', icon: AlertIcon },
   { href: '/report', label: 'Signaler', icon: PlusIcon, isCta: true },
-  { href: '/feed', label: 'Tendances', icon: TrendIcon },
+  { href: '/notifications', label: 'Notifications', icon: BellIcon, showBadge: true },
   { href: '/profile', label: 'Profil', icon: UserIcon }
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const unread = useUnreadCount(user?.id);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur md:hidden">
       <div className="mx-auto flex max-w-md items-center justify-between px-3 py-2">
-        {ITEMS.map(({ href, label, icon: Icon, isCta }) => {
+        {ITEMS.map(({ href, label, icon: Icon, isCta, showBadge }) => {
           const active = pathname === href;
           if (isCta) {
             return (
@@ -27,7 +31,7 @@ export default function BottomNav() {
                 className="flex flex-col items-center gap-1 -mt-6"
                 aria-label={label}
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-bg shadow-lg shadow-gold/30">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red text-ink shadow-lg shadow-red/30">
                   <Icon />
                 </span>
               </Link>
@@ -37,12 +41,19 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center gap-1 px-3 py-1.5 text-[11px] font-medium ${
-                active ? 'text-gold' : 'text-dim'
+              className={`relative flex flex-col items-center gap-1 px-3 py-1.5 text-[11px] font-medium ${
+                active ? 'text-red' : 'text-dim'
               }`}
               aria-current={active ? 'page' : undefined}
             >
-              <Icon />
+              <span className="relative">
+                <Icon />
+                {showBadge && unread > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red px-1 text-[9px] font-bold text-ink">
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
+              </span>
               {label}
             </Link>
           );
@@ -59,10 +70,10 @@ function HomeIcon() {
     </svg>
   );
 }
-function MapIcon() {
+function AlertIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z" /><path d="M9 7v13M15 4v13" />
+      <path d="M12 3l9 16H3l9-16z" /><path d="M12 10v4" /><circle cx="12" cy="17.5" r="0.5" fill="currentColor" />
     </svg>
   );
 }
@@ -73,10 +84,10 @@ function PlusIcon() {
     </svg>
   );
 }
-function TrendIcon() {
+function BellIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 17l6-6 4 4 8-8" /><path d="M15 7h6v6" />
+      <path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6" /><path d="M9.5 20a2.5 2.5 0 0 0 5 0" />
     </svg>
   );
 }

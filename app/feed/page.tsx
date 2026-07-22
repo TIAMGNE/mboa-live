@@ -1,86 +1,351 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/useAuth';
 import { useReports } from '@/lib/useReports';
-import ReportCard from '@/components/ReportCard';
-import CategoryBadge from '@/components/CategoryBadge';
-import ConfirmButtons from '@/components/ConfirmButtons';
-import Comments from '@/components/Comments';
-import ShareButton from '@/components/ShareButton';
+import { useFollowing } from '@/lib/useFollows';
+import { useLike, formatCount } from '@/lib/useLike';
+import { supabase } from '@/lib/supabaseClient';
+import { getCategory } from '@/lib/categories';
 import { timeAgo } from '@/lib/reportUtils';
+import { statusLabel, statusClasses } from '@/lib/statusLabel';
+import LikeButton from '@/components/LikeButton';
+import FollowButton from '@/components/FollowButton';
+import FavoriteButton from '@/components/FavoriteButton';
+import CommentsSheet from '@/components/CommentsSheet';
+import ShareSheet from '@/components/ShareSheet';
+import ReportFlagSheet from '@/components/ReportFlagSheet';
+import VideoPlayer from '@/components/VideoPlayer';
+import { Report } from '@/lib/types';
+
+// Repli pour les signalements publiés avant l'ajout de media_type en base
+// (voir schema_v4_migration.sql) : on devine via l'extension du fichier.
+function looksLikeVideo(url: string) {
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
+}
 
 export default function FeedPage() {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-6xl px-5 py-10 text-sm text-dim">Chargement...</div>}>
+    <Suspense fallback={<div className="flex h-[calc(100vh-64px)] items-center justify-center text-sm text-dim">Chargement...</div>}>
       <FeedContent />
     </Suspense>
   );
 }
 
 function FeedContent() {
-  const { reports, loading } = useReports();
+  const { user } = useAuth();
+  const { reports, loading, error } = useReports();
+  const { followingIds } = useFollowing(user?.id);
   const params = useSearchParams();
   const router = useRouter();
-  const activeId = params.get('report');
-  const active = reports.find(r => r.id === activeId);
+  const [tab, setTab] = useState<'pour-toi' | 'abonnements'>('pour-toi');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [commentsFor, setCommentsFor] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewedRef = useRef<Set<string>>(new Set());
 
-  if (active) {
-    const url = typeof window !== 'undefined' ? window.location.href : '';
-    return (
-      <div className="mx-auto max-w-2xl px-5 py-8">
-        <button
-          onClick={() => router.push('/feed')}
-          className="mb-6 font-display text-xs font-semibold text-dim hover:text-ink"
-        >
-          ← Retour au flux
-        </button>
+  // Un lien de commentaire (#hashtag) ou un lien partagé (?report=) préremplit la recherche/la position.
+  useEffect(() => {
+    const q = params.get('q');
+    if (q) setSearch(q);
+  }, [params]);
 
-        {active.media_urls?.[0] && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={active.media_urls[0]} alt={active.title} className="mb-5 w-full rounded-2xl object-cover" style={{ maxHeight: 360 }} />
-        )}
+  const visible = useMemo(() => {
+    let list = reports;
+    if (tab === 'abonnements') list = list.filter(r => r.user_id && followingIds.has(r.user_id));
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(
+        r => r.title.toLowerCase().includes(q) || r.description?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [reports, tab, followingIds, search]);
 
-        <div className="mb-3 flex items-center justify-between">
-          <CategoryBadge categoryId={active.category_id} />
-          <span className="font-mono text-xs text-dim">{timeAgo(active.created_at)}</span>
-        </div>
+  // Si on arrive avec ?report=xxx (lien partagé), on saute directement sur ce signalement.
+  useEffect(() => {
+    const targetId = params.get('report');
+    if (!targetId || !containerRef.current) return;
+    const el = containerRef.current.querySelector<HTMLElement>(`[data-report-id="${targetId}"]`);
+    el?.scrollIntoView({ block: 'start' });
+  }, [params, visible.length]);
 
-        <h1 className="font-display text-2xl font-bold text-ink">{active.title}</h1>
-        {active.description && <p className="mt-3 text-sm text-dim">{active.description}</p>}
-        <p className="mt-2 text-xs text-dim">{active.city_id === 'douala' ? 'Douala' : 'Yaoundé'}</p>
+  // Détermine quel slide est actuellement à l'écran : une seule vidéo joue à
+  // la fois dans tout le feed, et on ne compte une vue que pour celui-là.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-        <div className="mt-5 flex gap-2">
-          <ShareButton title={active.title} url={url} />
-        </div>
-
-        <div className="mt-6">
-          <ConfirmButtons
-            reportId={active.id}
-            confirmationsUp={active.confirmations_up}
-            confirmationsDown={active.confirmations_down}
-          />
-        </div>
-
-        <div className="mt-8">
-          <Comments reportId={active.id} />
-        </div>
-      </div>
+    const observer = new IntersectionObserver(
+      entries => {
+        const mostVisible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (mostVisible) {
+          const id = (mostVisible.target as HTMLElement).dataset.reportId;
+          if (id) setActiveId(id);
+        }
+      },
+      { root: container, threshold: [0.6, 0.9] }
     );
-  }
+
+    const slides = container.querySelectorAll('[data-report-id]');
+    slides.forEach(s => observer.observe(s));
+    return () => observer.disconnect();
+  }, [visible.length]);
+
+  // Compte une vue (une seule fois par session, par signalement, et seulement
+  // si connecté — la table report_views exige un utilisateur identifié).
+  useEffect(() => {
+    if (!activeId || !user || viewedRef.current.has(activeId)) return;
+    viewedRef.current.add(activeId);
+    supabase.from('report_views').insert({ report_id: activeId, user_id: user.id }).then();
+  }, [activeId, user]);
+
+  const activeIndex = visible.findIndex(r => r.id === activeId);
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10">
-      <h1 className="font-display text-2xl font-bold text-ink">Tendances</h1>
-      <p className="mt-1 text-sm text-dim">Tout ce qui se passe en ce moment, du plus récent au plus ancien.</p>
+    <div className="relative h-[calc(100vh-64px)] bg-black md:h-[calc(100vh-65px)]">
+      {/* Barre d'onglets */}
+      <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-6 bg-gradient-to-b from-black/70 to-transparent px-5 pb-6 pt-4">
+        <button
+          onClick={() => setTab('pour-toi')}
+          className={`font-display text-sm font-bold ${tab === 'pour-toi' ? 'text-ink' : 'text-ink/50'}`}
+        >
+          Pour toi
+          {tab === 'pour-toi' && <span className="mt-1 block h-0.5 w-full bg-red" />}
+        </button>
+        <button
+          onClick={() => setTab('abonnements')}
+          className={`font-display text-sm font-bold ${tab === 'abonnements' ? 'text-ink' : 'text-ink/50'}`}
+        >
+          Abonnements
+          {tab === 'abonnements' && <span className="mt-1 block h-0.5 w-full bg-red" />}
+        </button>
+        <button
+          onClick={() => setSearchOpen(v => !v)}
+          className="absolute right-5 text-ink"
+          aria-label="Rechercher"
+        >
+          🔍
+        </button>
+      </div>
 
-      {loading && <p className="mt-6 text-sm text-dim">Chargement...</p>}
+      {searchOpen && (
+        <div className="absolute inset-x-0 top-14 z-20 px-5">
+          <input
+            autoFocus
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher un signalement..."
+            className="w-full rounded-full border border-line bg-surface/90 px-4 py-2.5 text-sm text-ink outline-none backdrop-blur focus:border-red"
+          />
+          {search && (
+            <button
+              onClick={() => {
+                setSearch('');
+                router.replace('/feed');
+              }}
+              className="mt-2 font-display text-xs font-semibold text-dim"
+            >
+              ✕ Effacer la recherche
+            </button>
+          )}
+        </div>
+      )}
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {reports.map(report => (
-          <ReportCard key={report.id} report={report} />
+      {loading && (
+        <div className="flex h-full items-center justify-center text-sm text-dim">Chargement...</div>
+      )}
+
+      {!loading && error && (
+        <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+          <p className="font-display text-lg font-bold text-ink">Impossible de charger les signalements</p>
+          <p className="mt-2 max-w-sm text-sm text-dim">{error}</p>
+        </div>
+      )}
+
+      {!loading && !error && visible.length === 0 && (
+        <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+          <p className="font-display text-lg font-bold text-ink">
+            {tab === 'abonnements' ? "Personne à suivre pour l'instant" : 'Rien pour l\'instant'}
+          </p>
+          <p className="mt-2 text-sm text-dim">
+            {tab === 'abonnements'
+              ? "Suis d'autres personnes depuis l'onglet Pour toi pour voir leurs signalements ici."
+              : 'Sois le premier à publier un signalement.'}
+          </p>
+        </div>
+      )}
+
+      <div ref={containerRef} className="h-full snap-y snap-mandatory overflow-y-scroll scroll-smooth">
+        {visible.map((report, i) => (
+          <FeedSlide
+            key={report.id}
+            report={report}
+            active={report.id === activeId}
+            nearby={Math.abs(i - activeIndex) <= 1}
+            onOpenComments={() => setCommentsFor(report.id)}
+          />
         ))}
       </div>
+
+      {commentsFor && <CommentsSheet reportId={commentsFor} onClose={() => setCommentsFor(null)} />}
     </div>
+  );
+}
+
+function FeedSlide({
+  report,
+  active,
+  nearby,
+  onOpenComments
+}: {
+  report: Report;
+  active: boolean;
+  nearby: boolean;
+  onOpenComments: () => void;
+}) {
+  const media = report.media_urls?.[0];
+  const cat = getCategory(report.category_id);
+  const cityLabel = report.city_id === 'douala' ? 'Douala' : 'Yaoundé';
+  const handle = report.author?.username ? `@${report.author.username}` : report.author?.full_name || 'Utilisateur MBOA';
+  const url = typeof window !== 'undefined' ? `${window.location.origin}/feed?report=${report.id}` : '';
+  const { count, liked, like, canLike } = useLike(report.id, report.confirmations_up);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [flagOpen, setFlagOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const { user } = useAuth();
+  const router = useRouter();
+
+  async function messageAuthor() {
+    if (!user || !report.user_id) return;
+    setMoreOpen(false);
+    const { data } = await supabase.rpc('get_or_create_direct_conversation', { other_user_id: report.user_id });
+    if (data) router.push(`/messages/${data}`);
+  }
+
+  const isVideo = report.media_type === 'video' || (!report.media_type && media && looksLikeVideo(media));
+
+  return (
+    <section data-report-id={report.id} className="relative flex h-full w-full snap-start items-end justify-center bg-surface2">
+      {media ? (
+        isVideo ? (
+          <VideoPlayer
+            src={media}
+            className="absolute inset-0 h-full w-full object-cover"
+            active={active}
+            nearby={nearby}
+            onDoubleTapLike={like}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={media} alt={report.title} className="absolute inset-0 h-full w-full object-cover" />
+        )
+      ) : (
+        <div
+          className="absolute inset-0 flex items-center justify-center text-6xl"
+          style={{ background: `${cat.color}22` }}
+        >
+          {cat.icon}
+        </div>
+      )}
+
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/40" />
+
+      <span className="absolute left-4 top-16 z-10 flex items-center gap-1 rounded-full bg-black/50 px-3 py-1 font-display text-xs font-semibold text-ink backdrop-blur">
+        📍 {cityLabel}
+      </span>
+
+      <div className="absolute right-4 top-16 z-10 flex items-center gap-2">
+        <span className={`rounded-full border px-2.5 py-1 font-display text-[11px] font-bold ${statusClasses(report.status)}`}>
+          {statusLabel(report.status)}
+        </span>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setMoreOpen(v => !v)}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-ink backdrop-blur"
+            aria-label="Plus d'options"
+          >
+            ⋯
+          </button>
+          {moreOpen && (
+            <div className="absolute right-0 top-9 z-30 w-44 overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
+              {user && report.user_id && report.user_id !== user.id && (
+                <button
+                  type="button"
+                  onClick={messageAuthor}
+                  className="block w-full border-b border-line px-4 py-2.5 text-left text-xs font-semibold text-ink hover:bg-surface2"
+                >
+                  💬 Envoyer un message
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  setFlagOpen(true);
+                }}
+                className="block w-full px-4 py-2.5 text-left text-xs font-semibold text-ink hover:bg-surface2"
+              >
+                🚩 Signaler ce contenu
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Rail d'actions à droite */}
+      <div className="absolute right-3 bottom-28 z-10 flex flex-col items-center gap-5">
+        <div className="relative">
+          <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-ink bg-surface font-display text-sm font-bold text-ink">
+            {(report.author?.full_name || 'U').charAt(0).toUpperCase()}
+          </span>
+          {report.user_id && (
+            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+              <FollowButton targetUserId={report.user_id} />
+            </span>
+          )}
+        </div>
+        <LikeButton liked={liked} count={count} onLike={like} canLike={canLike} />
+        <button type="button" onClick={onOpenComments} className="flex flex-col items-center gap-1 text-ink" aria-label="Commentaires">
+          <span className="text-2xl">💬</span>
+          <span className="font-display text-xs font-bold drop-shadow">{formatCount(report.comments_count)}</span>
+        </button>
+        <button type="button" onClick={() => setShareOpen(true)} className="flex flex-col items-center gap-1 text-ink" aria-label="Partager">
+          <span className="text-2xl">↗️</span>
+          <span className="font-display text-xs font-bold drop-shadow">{formatCount(report.shares_count)}</span>
+        </button>
+        <FavoriteButton compact reportId={report.id} />
+      </div>
+
+      {/* Légende en bas à gauche */}
+      <div className="relative z-10 w-full px-4 pb-6 pr-20">
+        <p className="font-display text-sm font-bold text-ink">
+          {handle} · <span className="font-normal text-ink/70">{timeAgo(report.created_at)}</span>
+        </p>
+        <p className="mt-1 text-sm text-ink">{report.title}</p>
+        {report.description && <p className="mt-0.5 text-sm text-ink/80 line-clamp-2">{report.description}</p>}
+        <div className="mt-1.5 flex items-center gap-3 text-xs text-ink/70">
+          <span className="flex items-center gap-1">📍 {cat.label}, {cityLabel}</span>
+          <span className="flex items-center gap-1">👁 {formatCount(report.views_count)}</span>
+        </div>
+      </div>
+
+      {shareOpen && (
+        <ShareSheet
+          title={report.title}
+          url={url}
+          reportId={report.id}
+          onClose={() => setShareOpen(false)}
+          onShared={() => {}}
+        />
+      )}
+      {flagOpen && <ReportFlagSheet reportId={report.id} onClose={() => setFlagOpen(false)} />}
+    </section>
   );
 }

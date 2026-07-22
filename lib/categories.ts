@@ -1,19 +1,11 @@
 import { Category } from './types';
 
 export const CATEGORIES: Category[] = [
-  { id: 'traffic', label: 'Embouteillage', icon: '🚗', color: '#E8B33D' },
-  { id: 'accident', label: 'Accident', icon: '🚨', color: '#E2453D' },
-  { id: 'road', label: 'Route bloquée', icon: '🚧', color: '#E2453D' },
-  { id: 'event', label: 'Événement', icon: '🎉', color: '#2E9E6D' },
-  { id: 'concert', label: 'Concert', icon: '🎤', color: '#2E9E6D' },
-  { id: 'restaurant', label: 'Restaurant', icon: '🍽️', color: '#F4C862' },
-  { id: 'business', label: 'Commerce', icon: '🏪', color: '#F4C862' },
-  { id: 'promo', label: 'Promotion', icon: '🏷️', color: '#2E9E6D' },
-  { id: 'flood', label: 'Inondation', icon: '🌊', color: '#E2453D' },
-  { id: 'power', label: 'Coupure électricité', icon: '💡', color: '#E8B33D' },
-  { id: 'water', label: "Problème d'eau", icon: '🚰', color: '#E8B33D' },
-  { id: 'incident', label: 'Incident', icon: '⚠️', color: '#E2453D' },
-  { id: 'other', label: 'Autre', icon: '📍', color: '#9CA6A0' }
+  { id: 'voirie', label: 'Voirie', icon: '🛣️', color: '#E8B33D' },
+  { id: 'eclairage', label: 'Éclairage', icon: '💡', color: '#3B82F6' },
+  { id: 'eau', label: 'Eau', icon: '🚰', color: '#2E9E6D' },
+  { id: 'environnement', label: 'Environnement', icon: '🌳', color: '#8B5CF6' },
+  { id: 'autre', label: 'Autre', icon: '📍', color: '#9CA6A0' }
 ];
 
 export function getCategory(id: string): Category {

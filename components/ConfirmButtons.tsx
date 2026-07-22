@@ -30,16 +30,11 @@ export default function ConfirmButtons({
     setBusy(false);
     if (error) return; // ex : a déjà confirmé (contrainte unique)
     setAnswered(isStillHappening);
+    // Le compteur réel est incrémenté en base par un trigger côté serveur
+    // (voir supabase/schema.sql). On l'incrémente ici aussi juste pour
+    // un affichage immédiat, sans attendre le prochain rechargement.
     if (isStillHappening) setUp(v => v + 1);
     else setDown(v => v + 1);
-    await supabase
-      .from('reports')
-      .update(
-        isStillHappening
-          ? { confirmations_up: up + 1 }
-          : { confirmations_down: down + 1 }
-      )
-      .eq('id', reportId);
   }
 
   return (
