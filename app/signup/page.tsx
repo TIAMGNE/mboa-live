@@ -27,8 +27,12 @@ export default function SignupPage() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      phone: phone.trim() || undefined,
-      options: { data: { full_name: fullName.trim() } }
+      options: {
+        data: {
+          full_name: fullName.trim(),
+          phone: phone.trim() || null
+        }
+      }
     });
 
     if (signUpError) {
