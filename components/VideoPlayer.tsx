@@ -51,7 +51,22 @@ export default function VideoPlayer({ src, className, active, nearby, muted, onT
     if (active && !hasError) {
       v.muted = muted;
       const playPromise = v.play();
-      if (playPromise) playPromise.then(() => setPlaying(true)).catch(() => setPlaying(false));
+      if (playPromise) {
+        playPromise
+          .then(() => {
+            setPlaying(true);
+            // La lecture a bien démarré : le spinner n'a plus lieu d'être,
+            // même si l'évènement "onPlaying" du navigateur tarde ou ne se
+            // déclenche pas de façon fiable sur certains mobiles.
+            setIsBuffering(false);
+          })
+          .catch(() => setPlaying(false));
+      }
+      // Filet de sécurité : si le spinner reste affiché plus de 4 secondes
+      // sans qu'aucun évènement ne l'ait retiré, on le masque quand même
+      // pour ne jamais bloquer l'affichage de la vidéo indéfiniment.
+      const safetyTimeout = setTimeout(() => setIsBuffering(false), 4000);
+      return () => clearTimeout(safetyTimeout);
     } else {
       v.pause();
       setPlaying(false);
@@ -173,7 +188,7 @@ export default function VideoPlayer({ src, className, active, nearby, muted, onT
          qu'elle commence à jouer. Différent du badge de statut du
          signalement (En attente / En cours / Résolu, en haut de l'écran),
          qui reste affiché : il donne une information différente. */}
-      {!hasError && isBuffering && (
+      {!hasError && active && isBuffering && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span className="h-9 w-9 animate-spin rounded-full border-2 border-ink/25 border-t-ink" />
         </div>

@@ -20,12 +20,21 @@ export default function Header() {
         </Link>
 
         <nav className="hidden items-center gap-6 font-display text-sm font-medium text-dim md:flex">
-          <Link href="/search" className="transition hover:text-ink">Rechercher</Link>
-          <Link href="/feed" className="transition hover:text-ink">Signalements</Link>
-          <Link href="/report" className="transition hover:text-ink">Signaler</Link>
+          <Link href="/" className="flex items-center gap-1.5 transition hover:text-ink">
+            <span>🏠</span> Accueil
+          </Link>
+          <Link href="/search" className="flex items-center gap-1.5 transition hover:text-ink">
+            <span>🔍</span> Rechercher
+          </Link>
+          <Link href="/feed" className="flex items-center gap-1.5 transition hover:text-ink">
+            <span>⚠️</span> Signalements
+          </Link>
+          <Link href="/report" className="flex items-center gap-1.5 transition hover:text-ink">
+            <span>➕</span> Signaler
+          </Link>
           {user && (
-            <Link href="/messages" className="relative transition hover:text-ink">
-              Messages
+            <Link href="/messages" className="relative flex items-center gap-1.5 transition hover:text-ink">
+              <span>💬</span> Messages
               {unreadMessages > 0 && (
                 <span className="absolute -right-3 -top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red px-1 text-[9px] font-bold text-ink">
                   {unreadMessages > 9 ? '9+' : unreadMessages}
@@ -33,8 +42,8 @@ export default function Header() {
               )}
             </Link>
           )}
-          <Link href="/notifications" className="relative transition hover:text-ink">
-            Notifications
+          <Link href="/notifications" className="relative flex items-center gap-1.5 transition hover:text-ink">
+            <span>🔔</span> Notifications
             {unread > 0 && (
               <span className="absolute -right-3 -top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red px-1 text-[9px] font-bold text-ink">
                 {unread > 9 ? '9+' : unread}
@@ -44,9 +53,9 @@ export default function Header() {
           {profile ? (
             <Link
               href="/profile"
-              className="rounded-full border border-line px-4 py-1.5 text-ink transition hover:border-red"
+              className="flex items-center gap-1.5 rounded-full border border-line px-4 py-1.5 text-ink transition hover:border-red"
             >
-              {profile.full_name || 'Mon profil'}
+              <span>👤</span> {profile.full_name || 'Mon profil'}
             </Link>
           ) : (
             <Link
