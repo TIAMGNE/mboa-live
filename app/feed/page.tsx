@@ -34,12 +34,12 @@ export default function FeedPage() {
 }
 
 function FeedContent() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { reports, loading, error } = useReports();
   const { followingIds } = useFollowing(user?.id);
   const params = useSearchParams();
   const router = useRouter();
-  const [tab, setTab] = useState<'pour-toi' | 'abonnements'>('pour-toi');
+  const [tab, setTab] = useState<'pour-toi' | 'tendance' | 'national' | 'abonnements' | 'urgences'>('pour-toi');
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
@@ -55,15 +55,31 @@ function FeedContent() {
 
   const visible = useMemo(() => {
     let list = reports;
-    if (tab === 'abonnements') list = list.filter(r => r.user_id && followingIds.has(r.user_id));
+
+    if (tab === 'pour-toi' && profile?.city) {
+      list = list.filter(r => r.city_id === profile.city);
+    } else if (tab === 'abonnements') {
+      list = list.filter(r => r.user_id && followingIds.has(r.user_id));
+    } else if (tab === 'urgences') {
+      list = list.filter(r => r.is_emergency);
+    }
+    // "tendance" et "national" gardent tous les signalements, seul le tri change (plus bas).
+
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
         r => r.title.toLowerCase().includes(q) || r.description?.toLowerCase().includes(q)
       );
     }
+
+    if (tab === 'tendance') {
+      list = [...list].sort(
+        (a, b) => b.confirmations_up + b.views_count * 0.1 - (a.confirmations_up + a.views_count * 0.1)
+      );
+    }
+
     return list;
-  }, [reports, tab, followingIds, search]);
+  }, [reports, tab, followingIds, search, profile?.city]);
 
   // Si on arrive avec ?report=xxx (lien partagé), on saute directement sur ce signalement.
   useEffect(() => {
@@ -107,24 +123,28 @@ function FeedContent() {
 
   const activeIndex = visible.findIndex(r => r.id === activeId);
 
+  const TABS: { id: typeof tab; label: string }[] = [
+    { id: 'pour-toi', label: 'Pour toi' },
+    { id: 'tendance', label: 'Tendance' },
+    { id: 'national', label: 'National' },
+    { id: 'abonnements', label: 'Abonnements' },
+    { id: 'urgences', label: '🚨' }
+  ];
+
   return (
     <div className="relative h-[calc(100vh-64px)] bg-black md:h-[calc(100vh-65px)]">
       {/* Barre d'onglets */}
-      <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-6 bg-gradient-to-b from-black/70 to-transparent px-5 pb-6 pt-4">
-        <button
-          onClick={() => setTab('pour-toi')}
-          className={`font-display text-sm font-bold ${tab === 'pour-toi' ? 'text-ink' : 'text-ink/50'}`}
-        >
-          Pour toi
-          {tab === 'pour-toi' && <span className="mt-1 block h-0.5 w-full bg-red" />}
-        </button>
-        <button
-          onClick={() => setTab('abonnements')}
-          className={`font-display text-sm font-bold ${tab === 'abonnements' ? 'text-ink' : 'text-ink/50'}`}
-        >
-          Abonnements
-          {tab === 'abonnements' && <span className="mt-1 block h-0.5 w-full bg-red" />}
-        </button>
+      <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-4 overflow-x-auto bg-gradient-to-b from-black/70 to-transparent px-5 pb-6 pt-4">
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`shrink-0 font-display text-sm font-bold ${tab === t.id ? 'text-ink' : 'text-ink/50'}`}
+          >
+            {t.label}
+            {tab === t.id && <span className="mt-1 block h-0.5 w-full bg-red" />}
+          </button>
+        ))}
         <button
           onClick={() => setSearchOpen(v => !v)}
           className="absolute right-5 text-ink"
@@ -261,6 +281,11 @@ function FeedSlide({
       </span>
 
       <div className="absolute right-4 top-16 z-10 flex items-center gap-2">
+        {report.is_emergency && (
+          <span className="animate-pulse rounded-full border border-red bg-red px-2.5 py-1 font-display text-[11px] font-bold text-ink">
+            🚨 Urgence
+          </span>
+        )}
         <span className={`rounded-full border px-2.5 py-1 font-display text-[11px] font-bold ${statusClasses(report.status)}`}>
           {statusLabel(report.status)}
         </span>
@@ -302,9 +327,16 @@ function FeedSlide({
       {/* Rail d'actions à droite */}
       <div className="absolute right-3 bottom-28 z-10 flex flex-col items-center gap-5">
         <div className="relative">
-          <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-ink bg-surface font-display text-sm font-bold text-ink">
-            {(report.author?.full_name || 'U').charAt(0).toUpperCase()}
-          </span>
+          <a href={report.user_id ? `/profile/${report.user_id}` : undefined}>
+            <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-ink bg-surface font-display text-sm font-bold text-ink">
+              {report.author?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={report.author.avatar_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                (report.author?.full_name || 'U').charAt(0).toUpperCase()
+              )}
+            </span>
+          </a>
           {report.user_id && (
             <span className="absolute -bottom-1 left-1/2 -translate-x-1/2">
               <FollowButton targetUserId={report.user_id} />
@@ -326,7 +358,12 @@ function FeedSlide({
       {/* Légende en bas à gauche */}
       <div className="relative z-10 w-full px-4 pb-6 pr-20">
         <p className="font-display text-sm font-bold text-ink">
-          {handle} · <span className="font-normal text-ink/70">{timeAgo(report.created_at)}</span>
+          {report.user_id ? (
+            <a href={`/profile/${report.user_id}`} className="hover:underline">{handle}</a>
+          ) : (
+            handle
+          )}{' '}
+          · <span className="font-normal text-ink/70">{timeAgo(report.created_at)}</span>
         </p>
         <p className="mt-1 text-sm text-ink">{report.title}</p>
         {report.description && <p className="mt-0.5 text-sm text-ink/80 line-clamp-2">{report.description}</p>}

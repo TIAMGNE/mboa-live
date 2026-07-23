@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function SettingsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [newPassword, setNewPassword] = useState('');
@@ -14,6 +15,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [deletionRequested, setDeletionRequested] = useState(!!profile?.deletion_requested_at);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -46,6 +49,15 @@ export default function SettingsPage() {
   async function signOut() {
     await supabase.auth.signOut();
     router.push('/');
+  }
+
+  async function requestDeletion() {
+    if (!user) return;
+    if (!confirm('Confirmer la demande de suppression de ton compte ? Cette action sera traitée par un administrateur.')) return;
+    setDeleting(true);
+    await supabase.from('profiles').update({ deletion_requested_at: new Date().toISOString() }).eq('id', user.id);
+    setDeleting(false);
+    setDeletionRequested(true);
   }
 
   if (!authLoading && !user) {
@@ -108,6 +120,33 @@ export default function SettingsPage() {
       >
         Se déconnecter
       </button>
+
+      <div className="mt-10 space-y-2 border-t border-line pt-6 text-center text-xs text-dim">
+        <Link href="/terms" className="block hover:text-ink">Conditions générales d&apos;utilisation</Link>
+        <Link href="/privacy" className="block hover:text-ink">Politique de confidentialité</Link>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-red/30 bg-red/5 p-4">
+        <h2 className="font-display text-sm font-bold text-red">Zone dangereuse</h2>
+        {deletionRequested ? (
+          <p className="mt-2 text-xs text-dim">
+            Ta demande de suppression a bien été enregistrée. Un administrateur va la traiter.
+          </p>
+        ) : (
+          <>
+            <p className="mt-2 text-xs text-dim">
+              Demande la suppression définitive de ton compte et de tes données.
+            </p>
+            <button
+              onClick={requestDeletion}
+              disabled={deleting}
+              className="mt-3 rounded-full border border-red px-4 py-2 font-display text-xs font-bold text-red disabled:opacity-60"
+            >
+              {deleting ? 'Envoi...' : 'Demander la suppression de mon compte'}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

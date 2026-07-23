@@ -124,7 +124,7 @@ export default function SearchPage() {
             {users.map(u => (
               <Link
                 key={u.id}
-                href={`/messages`}
+                href={`/profile/${u.id}`}
                 className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-surface2"
               >
                 {u.avatar_url ? (

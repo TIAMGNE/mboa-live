@@ -24,9 +24,24 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://mboa-live-lavm-theta.vercel.app'),
   title: 'MBOA LIVE — Le Cameroun en temps réel',
   description:
-    "MBOA LIVE : voyez et partagez ce qui se passe autour de vous, en temps réel, à Douala et Yaoundé."
+    "MBOA LIVE : voyez et partagez ce qui se passe autour de vous, en temps réel, à Douala et Yaoundé.",
+  openGraph: {
+    title: 'MBOA LIVE — Le Cameroun en temps réel',
+    description:
+      "Voyez et partagez ce qui se passe autour de vous, en temps réel, à Douala et Yaoundé.",
+    siteName: 'MBOA LIVE',
+    locale: 'fr_FR',
+    type: 'website'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MBOA LIVE — Le Cameroun en temps réel',
+    description:
+      "Voyez et partagez ce qui se passe autour de vous, en temps réel, à Douala et Yaoundé."
+  }
 };
 
 export const viewport: Viewport = {

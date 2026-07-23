@@ -32,17 +32,25 @@ export default function AdminPage() {
   const { profile, loading } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
+  const [deletionRequests, setDeletionRequests] = useState<
+    { id: string; full_name: string | null; deletion_requested_at: string }[]
+  >([]);
 
   useEffect(() => {
     if (!profile?.is_admin) return;
 
     async function loadAll() {
-      const [{ count: users }, { count: reportsCount }, { count: confirmations }, { data: reportRows }] =
+      const [{ count: users }, { count: reportsCount }, { count: confirmations }, { data: reportRows }, { data: deletions }] =
         await Promise.all([
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
           supabase.from('reports').select('*', { count: 'exact', head: true }),
           supabase.from('confirmations').select('*', { count: 'exact', head: true }),
-          supabase.from('reports').select('*').order('created_at', { ascending: false }).limit(100)
+          supabase.from('reports').select('*').order('created_at', { ascending: false }).limit(100),
+          supabase
+            .from('profiles')
+            .select('id, full_name, deletion_requested_at')
+            .not('deletion_requested_at', 'is', null)
+            .order('deletion_requested_at', { ascending: true })
         ]);
 
       setStats({
@@ -52,6 +60,7 @@ export default function AdminPage() {
         confirmations: confirmations || 0
       });
       setReports((reportRows as Report[]) || []);
+      setDeletionRequests(deletions || []);
     }
 
     loadAll();
@@ -98,6 +107,26 @@ export default function AdminPage() {
           </div>
         ))}
       </div>
+
+      {deletionRequests.length > 0 && (
+        <>
+          <h2 className="mt-10 font-display text-lg font-bold text-ink">Demandes de suppression de compte</h2>
+          <div className="mt-4 space-y-2">
+            {deletionRequests.map(d => (
+              <div key={d.id} className="flex items-center justify-between rounded-xl border border-red/30 bg-red/5 px-4 py-3">
+                <div>
+                  <p className="font-display text-sm font-bold text-ink">{d.full_name || 'Utilisateur MBOA'}</p>
+                  <p className="text-xs text-dim">Demandé {timeAgo(d.deletion_requested_at)}</p>
+                </div>
+                <p className="font-mono text-[10px] text-dim">{d.id}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-dim">
+            Pour supprimer un compte définitivement : Supabase → Authentication → Users → cherche cet ID → Delete user.
+          </p>
+        </>
+      )}
 
       <h2 className="mt-10 font-display text-lg font-bold text-ink">Modération des signalements</h2>
       <p className="mt-1 text-xs text-dim">Clique sur le statut d&apos;un signalement pour le faire avancer à l&apos;étape suivante.</p>

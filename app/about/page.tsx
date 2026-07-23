@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Logo, { Wordmark } from '@/components/Logo';
 
@@ -36,6 +37,11 @@ export default function AboutPage() {
           <span>Villes couvertes</span>
           <span className="text-ink">Douala, Yaoundé</span>
         </div>
+      </div>
+
+      <div className="mt-6 space-y-2 text-center text-xs text-dim">
+        <Link href="/terms" className="block hover:text-ink">Conditions générales d&apos;utilisation</Link>
+        <Link href="/privacy" className="block hover:text-ink">Politique de confidentialité</Link>
       </div>
     </div>
   );

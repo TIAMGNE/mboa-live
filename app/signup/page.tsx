@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { CITIES } from '@/lib/categories';
 import { CityId } from '@/lib/types';
@@ -9,11 +10,13 @@ import FormField from '@/components/FormField';
 import Logo from '@/components/Logo';
 
 export default function SignupPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [city, setCity] = useState<CityId>('douala');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,8 +30,12 @@ export default function SignupPage() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      phone: phone.trim() || undefined,
-      options: { data: { full_name: fullName.trim() } }
+      options: {
+        data: {
+          full_name: fullName.trim(),
+          phone: phone.trim() || null
+        }
+      }
     });
 
     if (signUpError) {
@@ -57,13 +64,20 @@ export default function SignupPage() {
       }
 
       setLoading(false);
-      setDone(true);
+      router.push('/onboarding');
       return;
     }
 
     setNeedsEmailConfirmation(true);
     setLoading(false);
     setDone(true);
+  }
+
+  async function handleOAuth(provider: 'google' | 'facebook') {
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}/auth/callback` }
+    });
   }
 
   if (done) {
@@ -153,11 +167,32 @@ export default function SignupPage() {
           </div>
         </div>
 
+        <label className="flex items-start gap-2 text-xs text-dim">
+          <input
+            type="checkbox"
+            required
+            checked={acceptedTerms}
+            onChange={e => setAcceptedTerms(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            J&apos;accepte les{' '}
+            <Link href="/terms" target="_blank" className="font-semibold text-red">
+              conditions d&apos;utilisation
+            </Link>{' '}
+            et la{' '}
+            <Link href="/privacy" target="_blank" className="font-semibold text-red">
+              politique de confidentialité
+            </Link>
+            .
+          </span>
+        </label>
+
         {error && <p className="text-sm text-red-light">{error}</p>}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !acceptedTerms}
           className="w-full rounded-full bg-red py-3 font-display text-sm font-bold text-ink disabled:opacity-60"
         >
           {loading ? 'Création...' : "S'inscrire"}
@@ -178,12 +213,14 @@ export default function SignupPage() {
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
+          onClick={() => handleOAuth('google')}
           className="rounded-full border border-line py-2.5 font-display text-xs font-bold text-ink transition hover:border-red"
         >
           Google
         </button>
         <button
           type="button"
+          onClick={() => handleOAuth('facebook')}
           className="rounded-full border border-line py-2.5 font-display text-xs font-bold text-ink transition hover:border-red"
         >
           Facebook
