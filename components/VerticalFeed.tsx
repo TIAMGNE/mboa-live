@@ -36,6 +36,9 @@ export default function VerticalFeed() {
   const params = useSearchParams();
   const router = useRouter();
   const [tab, setTab] = useState<'pour-toi' | 'tendance' | 'national' | 'abonnements' | 'urgences'>('pour-toi');
+  // Réglage son partagé par tout le feed : une fois activé, il reste
+  // activé pour les vidéos suivantes, au lieu de redémarrer muet à chaque fois.
+  const [videoMuted, setVideoMuted] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
@@ -199,6 +202,8 @@ export default function VerticalFeed() {
             report={report}
             active={report.id === activeId}
             nearby={Math.abs(i - activeIndex) <= 1}
+            muted={videoMuted}
+            onToggleMute={() => setVideoMuted(m => !m)}
             onOpenComments={() => setCommentsFor(report.id)}
           />
         ))}
@@ -213,11 +218,15 @@ function FeedSlide({
   report,
   active,
   nearby,
+  muted,
+  onToggleMute,
   onOpenComments
 }: {
   report: Report;
   active: boolean;
   nearby: boolean;
+  muted: boolean;
+  onToggleMute: () => void;
   onOpenComments: () => void;
 }) {
   const media = report.media_urls?.[0];
@@ -262,6 +271,8 @@ function FeedSlide({
             className="absolute inset-0 h-full w-full object-cover"
             active={active}
             nearby={nearby}
+            muted={muted}
+            onToggleMute={onToggleMute}
             onDoubleTapLike={handleLikeAction}
           />
         ) : (

@@ -10,6 +10,8 @@ interface VideoPlayerProps {
   className?: string;
   active: boolean;
   nearby: boolean;
+  muted: boolean;
+  onToggleMute: () => void;
   onDoubleTapLike: () => void;
 }
 
@@ -22,11 +24,10 @@ function getPreloadStrategy(): 'auto' | 'metadata' {
   return 'auto';
 }
 
-export default function VideoPlayer({ src, className, active, nearby, onDoubleTapLike }: VideoPlayerProps) {
+export default function VideoPlayer({ src, className, active, nearby, muted, onToggleMute, onDoubleTapLike }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastTapRef = useRef(0);
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(true);
   const [speedIndex, setSpeedIndex] = useState(0);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [heartBurstKey, setHeartBurstKey] = useState(0);
@@ -34,6 +35,15 @@ export default function VideoPlayer({ src, className, active, nearby, onDoubleTa
   const [duration, setDuration] = useState(0);
   const [hasError, setHasError] = useState(false);
   const [seeking, setSeeking] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
+
+  // Le réglage son/muet est partagé entre toutes les vidéos du feed (voir
+  // VerticalFeed) : une fois activé par la personne, ça reste activé pour
+  // les vidéos suivantes, au lieu de redémarrer muet à chaque fois.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (v) v.muted = muted;
+  }, [muted]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -77,14 +87,9 @@ export default function VideoPlayer({ src, className, active, nearby, onDoubleTa
     }
   }
 
-  function toggleMute(e: React.MouseEvent) {
+  function handleToggleMute(e: React.MouseEvent) {
     e.stopPropagation();
-    const v = videoRef.current;
-    if (!v) return;
-    const next = !v.muted;
-    v.muted = next;
-    if (!next) v.volume = 1;
-    setMuted(next);
+    onToggleMute();
   }
 
   function cycleSpeed(e: React.MouseEvent) {
@@ -117,6 +122,7 @@ export default function VideoPlayer({ src, className, active, nearby, onDoubleTa
 
   function retry() {
     setHasError(false);
+    setIsBuffering(true);
     const v = videoRef.current;
     if (v) {
       v.load();
@@ -138,12 +144,18 @@ export default function VideoPlayer({ src, className, active, nearby, onDoubleTa
           preload={preload}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
-          onError={() => setHasError(true)}
+          onWaiting={() => setIsBuffering(true)}
+          onPlaying={() => setIsBuffering(false)}
+          onCanPlay={() => setIsBuffering(false)}
+          onError={() => {
+            setHasError(true);
+            setIsBuffering(false);
+          }}
         />
       ) : (
         <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-surface2 px-6 text-center">
           <span className="text-3xl">⚠️</span>
-          <p className="text-sm text-dim">Cette vidéo n&apos;a pas pu être chargée.</p>
+          <p className="text-sm text-dim">Impossible de charger la vidéo.</p>
           <button
             type="button"
             onClick={e => {
@@ -154,6 +166,16 @@ export default function VideoPlayer({ src, className, active, nearby, onDoubleTa
           >
             Réessayer
           </button>
+        </div>
+      )}
+
+      {/* Indicateur de chargement de la vidéo elle-même — disparaît dès
+         qu'elle commence à jouer. Différent du badge de statut du
+         signalement (En attente / En cours / Résolu, en haut de l'écran),
+         qui reste affiché : il donne une information différente. */}
+      {!hasError && isBuffering && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span className="h-9 w-9 animate-spin rounded-full border-2 border-ink/25 border-t-ink" />
         </div>
       )}
 
@@ -175,7 +197,7 @@ export default function VideoPlayer({ src, className, active, nearby, onDoubleTa
         <div className="absolute left-4 top-28 z-20 flex gap-2">
           <button
             type="button"
-            onClick={toggleMute}
+            onClick={handleToggleMute}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-base text-ink backdrop-blur"
             aria-label={muted ? 'Activer le son' : 'Couper le son'}
           >
