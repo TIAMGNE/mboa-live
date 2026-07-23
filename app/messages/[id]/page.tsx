@@ -50,7 +50,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
   const blocked = other ? isBlocked(other.user_id) : false;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-52px)] max-w-2xl flex-col">
+    <div className="mx-auto flex h-[calc(100vh-132px)] max-w-2xl flex-col md:h-[calc(100vh-53px)]">
       {/* En-tête */}
       <div className="flex items-center gap-3 border-b border-line px-4 py-3">
         <button onClick={() => router.push('/messages')} aria-label="Retour" className="text-dim hover:text-ink">←</button>

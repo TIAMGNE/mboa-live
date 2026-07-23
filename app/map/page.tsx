@@ -22,7 +22,7 @@ export default function MapPage() {
   const center = CITIES.find(c => c.id === city)!;
 
   return (
-    <div className="flex h-[calc(100vh-52px)] flex-col">
+    <div className="flex h-[calc(100vh-132px)] flex-col md:h-[calc(100vh-53px)]">
       <div className="flex items-center gap-2 border-b border-line bg-surface px-5 py-3">
         {CITIES.map(c => (
           <button

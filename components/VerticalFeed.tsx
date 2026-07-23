@@ -124,7 +124,7 @@ export default function VerticalFeed() {
   ];
 
   return (
-    <div className="relative h-[calc(100vh-52px)] bg-black md:h-[calc(100vh-53px)]">
+    <div className="relative h-[calc(100vh-132px)] bg-black md:h-[calc(100vh-53px)]">
       <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-1.5 overflow-x-auto bg-gradient-to-b from-black/70 to-transparent px-5 pb-4 pt-3">
         {TABS.map(t => (
           <button

@@ -62,7 +62,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-52px)] max-w-md flex-col justify-center px-6 py-10">
+    <div className="mx-auto flex min-h-[calc(100vh-132px)] md:h-[calc(100vh-53px)] max-w-md flex-col justify-center px-6 py-10">
       <div className="mb-8 flex justify-center">
         <Logo size={48} />
       </div>

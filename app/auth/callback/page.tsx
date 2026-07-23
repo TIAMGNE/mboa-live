@@ -18,7 +18,7 @@ export default function AuthCallbackPage() {
   }, [user, profile, loading, router]);
 
   return (
-    <div className="flex h-[calc(100vh-52px)] items-center justify-center text-sm text-dim">
+    <div className="flex h-[calc(100vh-132px)] md:h-[calc(100vh-53px)] items-center justify-center text-sm text-dim">
       Connexion en cours...
     </div>
   );

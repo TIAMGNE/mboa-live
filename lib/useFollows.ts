@@ -24,7 +24,7 @@ export function useFollowing(userId?: string) {
   }, [userId]);
 
   async function toggleFollow(targetUserId: string) {
-    if (!userId || userId === targetUserId) return;
+    if (!userId || userId === targetUserId) return false;
     const alreadyFollowing = followingIds.has(targetUserId);
 
     setFollowingIds(prev => {
@@ -34,11 +34,24 @@ export function useFollowing(userId?: string) {
       return next;
     });
 
-    if (alreadyFollowing) {
-      await supabase.from('follows').delete().eq('follower_id', userId).eq('following_id', targetUserId);
-    } else {
-      await supabase.from('follows').insert({ follower_id: userId, following_id: targetUserId });
+    const { error } = alreadyFollowing
+      ? await supabase.from('follows').delete().eq('follower_id', userId).eq('following_id', targetUserId)
+      : await supabase.from('follows').insert({ follower_id: userId, following_id: targetUserId });
+
+    if (error) {
+      // L'action a réellement échoué : on annule le changement visuel pour
+      // ne pas laisser le bouton dans un état qui ne reflète pas la réalité.
+      setFollowingIds(prev => {
+        const next = new Set(prev);
+        if (alreadyFollowing) next.add(targetUserId);
+        else next.delete(targetUserId);
+        return next;
+      });
+      // eslint-disable-next-line no-console
+      console.error('MBOA LIVE — erreur abonnement :', error.message);
+      return false;
     }
+    return true;
   }
 
   return { followingIds, loading, toggleFollow, refresh: load };
