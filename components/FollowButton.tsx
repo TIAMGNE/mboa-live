@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
 import { useFollowing } from '@/lib/useFollows';
-import AuthPromptModal from './AuthPromptModal';
 
 export default function FollowButton({ targetUserId }: { targetUserId: string }) {
   const { user } = useAuth();
   const { followingIds, toggleFollow } = useFollowing(user?.id);
-  const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -17,7 +17,7 @@ export default function FollowButton({ targetUserId }: { targetUserId: string })
 
   async function handleClick() {
     if (!user) {
-      setAuthPromptOpen(true);
+      router.push('/login');
       return;
     }
     if (busy) return;
@@ -48,9 +48,6 @@ export default function FollowButton({ targetUserId }: { targetUserId: string })
         <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/80 px-2 py-1 text-[10px] font-semibold text-ink">
           Échec, réessaie
         </span>
-      )}
-      {authPromptOpen && (
-        <AuthPromptModal action="suivre cette personne" onClose={() => setAuthPromptOpen(false)} />
       )}
     </div>
   );

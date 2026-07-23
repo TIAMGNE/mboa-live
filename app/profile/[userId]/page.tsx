@@ -6,7 +6,6 @@ import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
 import { useFollowCounts } from '@/lib/useFollows';
 import { Report, Profile } from '@/lib/types';
-import FollowButton from '@/components/FollowButton';
 import MediaThumbnail from '@/components/MediaThumbnail';
 
 export default function PublicProfilePage({ params }: { params: { userId: string } }) {
@@ -89,7 +88,6 @@ export default function PublicProfilePage({ params }: { params: { userId: string
           {handle && <p className="text-sm text-dim">{handle}</p>}
           {cityLabel && <p className="text-xs text-dim">📍 {cityLabel}</p>}
         </div>
-        {user && <FollowButton targetUserId={userId} />}
       </div>
 
       {profile.bio && <p className="mt-4 text-sm text-ink">{profile.bio}</p>}

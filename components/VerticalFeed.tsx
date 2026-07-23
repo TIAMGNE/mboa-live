@@ -11,7 +11,6 @@ import { getCategory } from '@/lib/categories';
 import { timeAgo } from '@/lib/reportUtils';
 import { statusLabel, statusClasses, statusIcon } from '@/lib/statusLabel';
 import LikeButton from '@/components/LikeButton';
-import FollowButton from '@/components/FollowButton';
 import FavoriteButton from '@/components/FavoriteButton';
 import CommentsSheet from '@/components/CommentsSheet';
 import ShareSheet from '@/components/ShareSheet';
@@ -328,26 +327,19 @@ function FeedSlide({
 
       {/* Rail d'actions à droite */}
       <div className="absolute right-3 bottom-28 z-10 flex flex-col items-center gap-5">
-        <div className="relative">
-          <a href={report.user_id ? `/profile/${report.user_id}` : undefined}>
-            <span
-              className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-ink font-display text-sm font-bold text-ink"
-              style={!report.author?.avatar_url ? { background: 'linear-gradient(135deg, #E2453D, #8B2E29)' } : undefined}
-            >
-              {report.author?.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={report.author.avatar_url} alt="" className="h-full w-full object-cover" />
-              ) : (
-                (report.author?.full_name || 'U').charAt(0).toUpperCase()
-              )}
-            </span>
-          </a>
-          {report.user_id && (
-            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-              <FollowButton targetUserId={report.user_id} />
-            </span>
-          )}
-        </div>
+        <a href={report.user_id ? `/profile/${report.user_id}` : undefined}>
+          <span
+            className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-ink font-display text-sm font-bold text-ink"
+            style={!report.author?.avatar_url ? { background: 'linear-gradient(135deg, #E2453D, #8B2E29)' } : undefined}
+          >
+            {report.author?.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={report.author.avatar_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              (report.author?.full_name || 'U').charAt(0).toUpperCase()
+            )}
+          </span>
+        </a>
         <LikeButton liked={liked} count={count} onLike={handleLikeAction} canLike={true} />
         <button type="button" onClick={onOpenComments} className="flex flex-col items-center gap-1 text-ink" aria-label="Commentaires">
           <span className="text-2xl">💬</span>

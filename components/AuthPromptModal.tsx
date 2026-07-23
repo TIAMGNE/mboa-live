@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 
 export default function AuthPromptModal({
@@ -9,7 +11,17 @@ export default function AuthPromptModal({
   action: string;
   onClose: () => void;
 }) {
-  return (
+  // On affiche la fenêtre via un "portail" directement à la racine de la
+  // page, plutôt que là où le bouton qui l'ouvre se trouve dans le code.
+  // Sans ça, si ce bouton est dans un élément légèrement déplacé visuellement
+  // (ex : le bouton "suivre", recentré sous l'avatar), la fenêtre se
+  // retrouvait coincée dans ce petit espace au lieu de s'afficher
+  // correctement au milieu de l'écran.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 md:items-center" onClick={onClose}>
       <div
         className="w-full max-w-sm rounded-t-3xl border-t border-line bg-surface p-6 text-center md:rounded-3xl md:border"
@@ -37,6 +49,7 @@ export default function AuthPromptModal({
           Continuer à parcourir
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
