@@ -36,6 +36,36 @@ export default function VideoPlayer({ src, className, active, nearby, muted, onT
   const [hasError, setHasError] = useState(false);
   const [seeking, setSeeking] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Filet de sécurité en plus de ce que le navigateur gère déjà tout seul
+  // (le pré-chargement des secondes à venir et la reprise après un simple
+  // ralentissement sont natifs à la balise <video>, pas besoin de les
+  // recoder). Ici, on couvre le cas d'une VRAIE coupure réseau complète :
+  // certains navigateurs abandonnent la requête en cours plutôt que de la
+  // reprendre automatiquement une fois la connexion revenue.
+  useEffect(() => {
+    function handleOffline() {
+      setIsOffline(true);
+    }
+    function handleOnline() {
+      setIsOffline(false);
+      const v = videoRef.current;
+      // Si la vidéo active était en train d'attendre des données, on relance
+      // explicitement le chargement au cas où le navigateur n'ait pas repris
+      // tout seul après une coupure prolongée.
+      if (v && active && v.readyState < 3) {
+        v.load();
+        v.play().catch(() => {});
+      }
+    }
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [active]);
 
   // Le réglage son/muet est partagé entre toutes les vidéos du feed (voir
   // VerticalFeed) : une fois activé par la personne, ça reste activé pour
@@ -189,8 +219,13 @@ export default function VideoPlayer({ src, className, active, nearby, muted, onT
          signalement (En attente / En cours / Résolu, en haut de l'écran),
          qui reste affiché : il donne une information différente. */}
       {!hasError && active && isBuffering && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2">
           <span className="h-9 w-9 animate-spin rounded-full border-2 border-ink/25 border-t-ink" />
+          {isOffline && (
+            <span className="rounded-full bg-black/60 px-3 py-1 text-xs text-ink backdrop-blur">
+              Connexion coupée — reprise automatique dès son retour
+            </span>
+          )}
         </div>
       )}
 
