@@ -27,7 +27,7 @@ export default function LikeButton({
       <span className={`text-2xl transition ${liked ? 'scale-110' : ''}`}>
         {liked ? '❤️' : '🤍'}
       </span>
-      <span className="font-display text-xs font-bold drop-shadow">{formatCount(count)}</span>
+      {count > 0 && <span className="font-display text-xs font-bold drop-shadow">{formatCount(count)}</span>}
     </button>
   );
 }

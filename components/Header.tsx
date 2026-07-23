@@ -13,13 +13,14 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-        <Link href="/" className="flex items-center gap-2.5">
-          <Logo size={30} />
-          <Wordmark className="text-lg" />
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-2.5">
+        <Link href="/" className="flex items-center gap-2">
+          <Logo size={24} />
+          <Wordmark className="text-base" />
         </Link>
 
         <nav className="hidden items-center gap-6 font-display text-sm font-medium text-dim md:flex">
+          <Link href="/search" className="transition hover:text-ink">Rechercher</Link>
           <Link href="/feed" className="transition hover:text-ink">Signalements</Link>
           <Link href="/report" className="transition hover:text-ink">Signaler</Link>
           {user && (
@@ -58,6 +59,9 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3 md:hidden">
+          <Link href="/search" className="text-ink" aria-label="Rechercher">
+            🔍
+          </Link>
           {user && (
             <Link href="/messages" className="relative text-ink" aria-label="Messages">
               💬

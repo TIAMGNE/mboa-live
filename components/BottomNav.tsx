@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
 import { useUnreadCount } from '@/lib/useNotifications';
+import CreateSheet from './CreateSheet';
 
 const ITEMS = [
   { href: '/', label: 'Accueil', icon: HomeIcon },
@@ -17,6 +19,7 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
   const unread = useUnreadCount(user?.id);
+  const [createOpen, setCreateOpen] = useState(false);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur md:hidden">
@@ -25,16 +28,16 @@ export default function BottomNav() {
           const active = pathname === href;
           if (isCta) {
             return (
-              <Link
+              <button
                 key={href}
-                href={href}
+                onClick={() => setCreateOpen(true)}
                 className="flex flex-col items-center gap-1 -mt-6"
                 aria-label={label}
               >
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red text-ink shadow-lg shadow-red/30">
                   <Icon />
                 </span>
-              </Link>
+              </button>
             );
           }
           return (
@@ -59,6 +62,7 @@ export default function BottomNav() {
           );
         })}
       </div>
+      {createOpen && <CreateSheet onClose={() => setCreateOpen(false)} />}
     </nav>
   );
 }

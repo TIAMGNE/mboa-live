@@ -66,9 +66,9 @@ export default function ReportCard({ report }: { report: Report }) {
           <div className="flex items-center justify-between pt-1">
             <span className="text-xs text-dim">{cityLabel} · {timeAgo(report.created_at)}</span>
             <span className="flex items-center gap-2.5 font-mono text-[11px] text-dim">
-              <span className="inline-flex items-center gap-1">❤️ {formatCount(report.confirmations_up)}</span>
-              <span className="inline-flex items-center gap-1">💬 {formatCount(report.comments_count)}</span>
-              <span className="inline-flex items-center gap-1">👁 {formatCount(report.views_count)}</span>
+              {report.confirmations_up > 0 && <span className="inline-flex items-center gap-1">❤️ {formatCount(report.confirmations_up)}</span>}
+              {report.comments_count > 0 && <span className="inline-flex items-center gap-1">💬 {formatCount(report.comments_count)}</span>}
+              {report.views_count > 0 && <span className="inline-flex items-center gap-1">👁 {formatCount(report.views_count)}</span>}
             </span>
           </div>
         </div>

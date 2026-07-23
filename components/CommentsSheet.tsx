@@ -251,7 +251,7 @@ export default function CommentsSheet({
     setSending(false);
 
     if (error || !data) {
-      setSendError("Le commentaire n'a pas pu être publié. Réessaie.");
+      setSendError(error?.code === 'P0001' ? error.message : "Le commentaire n'a pas pu être publié. Réessaie.");
       return;
     }
 

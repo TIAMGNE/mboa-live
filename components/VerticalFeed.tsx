@@ -9,7 +9,7 @@ import { useLike, formatCount } from '@/lib/useLike';
 import { supabase } from '@/lib/supabaseClient';
 import { getCategory } from '@/lib/categories';
 import { timeAgo } from '@/lib/reportUtils';
-import { statusLabel, statusClasses } from '@/lib/statusLabel';
+import { statusLabel, statusClasses, statusIcon } from '@/lib/statusLabel';
 import LikeButton from '@/components/LikeButton';
 import FollowButton from '@/components/FollowButton';
 import FavoriteButton from '@/components/FavoriteButton';
@@ -20,10 +20,16 @@ import AuthPromptModal from '@/components/AuthPromptModal';
 import VideoPlayer from '@/components/VideoPlayer';
 import { Report } from '@/lib/types';
 
+// Repli pour les signalements publiés avant l'ajout de media_type en base
+// (voir schema_v4_migration.sql) : on devine via l'extension du fichier.
 function looksLikeVideo(url: string) {
   return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
 }
 
+/** Le feed vertical complet façon TikTok — accessible aux visiteurs non
+ * connectés pour la découverte de contenu ; les actions réservées aux
+ * membres (aimer, suivre, favoris) affichent une invite de connexion
+ * plutôt que d'être invisibles ou silencieuses. */
 export default function VerticalFeed() {
   const { user, profile } = useAuth();
   const { reports, loading, error } = useReports();
@@ -99,6 +105,8 @@ export default function VerticalFeed() {
     return () => observer.disconnect();
   }, [visible.length]);
 
+  // Vues : uniquement pour les membres connectés (report_views exige un
+  // utilisateur identifié) — un visiteur peut regarder sans que ça compte.
   useEffect(() => {
     if (!activeId || !user || viewedRef.current.has(activeId)) return;
     viewedRef.current.add(activeId);
@@ -116,21 +124,22 @@ export default function VerticalFeed() {
   ];
 
   return (
-    <div className="relative h-[calc(100vh-64px)] bg-black md:h-[calc(100vh-65px)]">
-      <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-4 overflow-x-auto bg-gradient-to-b from-black/70 to-transparent px-5 pb-6 pt-4">
+    <div className="relative h-[calc(100vh-52px)] bg-black md:h-[calc(100vh-53px)]">
+      <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-1.5 overflow-x-auto bg-gradient-to-b from-black/70 to-transparent px-5 pb-4 pt-3">
         {TABS.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`shrink-0 font-display text-sm font-bold ${tab === t.id ? 'text-ink' : 'text-ink/50'}`}
+            className={`shrink-0 rounded-full px-3 py-1.5 font-display text-xs font-bold transition ${
+              tab === t.id ? 'bg-ink text-bg' : 'text-ink/60'
+            }`}
           >
             {t.label}
-            {tab === t.id && <span className="mt-1 block h-0.5 w-full bg-red" />}
           </button>
         ))}
         <button
           onClick={() => setSearchOpen(v => !v)}
-          className="absolute right-5 text-ink"
+          className="absolute right-5 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-ink"
           aria-label="Rechercher"
         >
           🔍
@@ -138,7 +147,7 @@ export default function VerticalFeed() {
       </div>
 
       {searchOpen && (
-        <div className="absolute inset-x-0 top-14 z-20 px-5">
+        <div className="absolute inset-x-0 top-12 z-20 px-5">
           <input
             autoFocus
             value={search}
@@ -225,6 +234,9 @@ function FeedSlide({
   const { user } = useAuth();
   const router = useRouter();
 
+  // Un visiteur non connecté peut tout regarder ; dès qu'il essaie d'aimer,
+  // on lui montre clairement pourquoi ça ne marche pas encore, plutôt que
+  // de le laisser cliquer dans le vide.
   function handleLikeAction() {
     if (!user) {
       setAuthPromptOpen(true);
@@ -268,24 +280,22 @@ function FeedSlide({
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/40" />
 
-      <span className="absolute left-4 top-16 z-10 flex items-center gap-1 rounded-full bg-black/50 px-3 py-1 font-display text-xs font-semibold text-ink backdrop-blur">
+      <span className="absolute left-4 top-14 z-10 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1 font-display text-xs font-semibold text-ink backdrop-blur">
         📍 {cityLabel}
       </span>
 
-      <div className="absolute right-4 top-16 z-10 flex items-center gap-2">
-        {report.is_emergency && (
-          <span className="animate-pulse rounded-full border border-red bg-red px-2.5 py-1 font-display text-[11px] font-bold text-ink">
-            🚨 Urgence
-          </span>
-        )}
+      <div className="absolute right-4 top-14 z-10 flex items-center gap-1.5">
         <span className={`rounded-full border px-2.5 py-1 font-display text-[11px] font-bold ${statusClasses(report.status)}`}>
-          {statusLabel(report.status)}
+          {statusIcon(report.status)} {statusLabel(report.status)}
         </span>
+        {report.is_emergency && (
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red text-xs">🚨</span>
+        )}
         <div className="relative">
           <button
             type="button"
             onClick={() => setMoreOpen(v => !v)}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-ink backdrop-blur"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-ink backdrop-blur"
             aria-label="Plus d'options"
           >
             ⋯
@@ -320,7 +330,10 @@ function FeedSlide({
       <div className="absolute right-3 bottom-28 z-10 flex flex-col items-center gap-5">
         <div className="relative">
           <a href={report.user_id ? `/profile/${report.user_id}` : undefined}>
-            <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-ink bg-surface font-display text-sm font-bold text-ink">
+            <span
+              className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-ink font-display text-sm font-bold text-ink"
+              style={!report.author?.avatar_url ? { background: 'linear-gradient(135deg, #E2453D, #8B2E29)' } : undefined}
+            >
               {report.author?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={report.author.avatar_url} alt="" className="h-full w-full object-cover" />
@@ -338,11 +351,15 @@ function FeedSlide({
         <LikeButton liked={liked} count={count} onLike={handleLikeAction} canLike={true} />
         <button type="button" onClick={onOpenComments} className="flex flex-col items-center gap-1 text-ink" aria-label="Commentaires">
           <span className="text-2xl">💬</span>
-          <span className="font-display text-xs font-bold drop-shadow">{formatCount(report.comments_count)}</span>
+          {report.comments_count > 0 && (
+            <span className="font-display text-xs font-bold drop-shadow">{formatCount(report.comments_count)}</span>
+          )}
         </button>
         <button type="button" onClick={() => setShareOpen(true)} className="flex flex-col items-center gap-1 text-ink" aria-label="Partager">
           <span className="text-2xl">↗️</span>
-          <span className="font-display text-xs font-bold drop-shadow">{formatCount(report.shares_count)}</span>
+          {report.shares_count > 0 && (
+            <span className="font-display text-xs font-bold drop-shadow">{formatCount(report.shares_count)}</span>
+          )}
         </button>
         <FavoriteButton compact reportId={report.id} />
       </div>
