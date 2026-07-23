@@ -112,6 +112,11 @@ export default function CameraCapture({
     onCapture(file);
   }
 
+  function pickFromGallery(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) onCapture(f);
+  }
+
   const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
   const ss = String(seconds % 60).padStart(2, '0');
 
@@ -171,21 +176,35 @@ export default function CameraCapture({
             </button>
           </>
         ) : mode === 'photo' ? (
-          <button
-            onClick={takePhoto}
-            aria-label="Prendre la photo"
-            className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-ink bg-ink/20"
-          >
-            <span className="h-12 w-12 rounded-full bg-ink" />
-          </button>
+          <>
+            <label className="font-display text-xs font-semibold text-dim underline">
+              Galerie
+              <input type="file" accept="image/*" className="hidden" onChange={pickFromGallery} />
+            </label>
+            <button
+              onClick={takePhoto}
+              aria-label="Prendre la photo"
+              className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-ink bg-ink/20"
+            >
+              <span className="h-12 w-12 rounded-full bg-ink" />
+            </button>
+            <span className="w-12" />
+          </>
         ) : (
-          <button
-            onClick={recording ? stopRecording : startRecording}
-            aria-label={recording ? 'Arrêter' : 'Filmer'}
-            className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-ink"
-          >
-            <span className={`bg-red transition-all ${recording ? 'h-6 w-6 rounded-md' : 'h-12 w-12 rounded-full'}`} />
-          </button>
+          <>
+            <label className="font-display text-xs font-semibold text-dim underline">
+              Galerie
+              <input type="file" accept="video/*" className="hidden" onChange={pickFromGallery} />
+            </label>
+            <button
+              onClick={recording ? stopRecording : startRecording}
+              aria-label={recording ? 'Arrêter' : 'Filmer'}
+              className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-ink"
+            >
+              <span className={`bg-red transition-all ${recording ? 'h-6 w-6 rounded-md' : 'h-12 w-12 rounded-full'}`} />
+            </button>
+            <span className="w-12" />
+          </>
         )}
       </div>
     </div>

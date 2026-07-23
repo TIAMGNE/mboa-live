@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/useAuth';
 import { timeAgo } from '@/lib/reportUtils';
+import ReportFlagSheet from './ReportFlagSheet';
 
 interface CommentRow {
   id: string;
@@ -65,6 +66,7 @@ function CommentRow({
   const [editText, setEditText] = useState(comment.content);
   const [busy, setBusy] = useState(false);
   const [rowError, setRowError] = useState<string | null>(null);
+  const [flagOpen, setFlagOpen] = useState(false);
   const isOwn = user?.id === comment.user_id;
 
   async function saveEdit() {
@@ -139,8 +141,12 @@ function CommentRow({
               <button onClick={remove} disabled={busy} className="hover:text-red">Supprimer</button>
             </>
           )}
+          {!isOwn && user && (
+            <button onClick={() => setFlagOpen(true)} className="hover:text-red">Signaler</button>
+          )}
         </div>
       </div>
+      {flagOpen && <ReportFlagSheet commentId={comment.id} onClose={() => setFlagOpen(false)} />}
     </div>
   );
 }

@@ -39,6 +39,9 @@ export interface Report {
   author?: { full_name: string | null; username: string | null; avatar_url: string | null } | null;
 }
 
+export type Role = 'user' | 'support' | 'moderator' | 'super_admin';
+export type AccountStatus = 'active' | 'suspended' | 'banned';
+
 export interface Profile {
   id: string;
   full_name: string | null;
@@ -51,7 +54,77 @@ export interface Profile {
   onboarded: boolean;
   deletion_requested_at: string | null;
   is_admin: boolean;
+  role: Role;
+  account_status: AccountStatus;
+  suspended_until: string | null;
   created_at: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  admin_id: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  reason: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  admin?: { full_name: string | null } | null;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface Hashtag {
+  id: string;
+  tag: string;
+  is_banned: boolean;
+  created_at: string;
+}
+
+export interface ReportFlag {
+  id: string;
+  report_id: string;
+  user_id: string;
+  reason: string;
+  details: string | null;
+  status: 'pending' | 'resolved' | 'dismissed';
+  resolved_by: string | null;
+  resolved_at: string | null;
+  resolution_note: string | null;
+  created_at: string;
+  report?: { title: string; media_urls: string[] } | null;
+}
+
+export interface ModerationAppeal {
+  id: string;
+  flag_id: string | null;
+  report_id: string | null;
+  user_id: string;
+  message: string;
+  status: 'pending' | 'approved' | 'rejected';
+  resolved_by: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  user?: { full_name: string | null } | null;
+}
+
+export interface CommentRow {
+  id: string;
+  report_id: string;
+  user_id: string;
+  content: string;
+  parent_id: string | null;
+  edited: boolean;
+  hidden: boolean;
+  created_at: string;
+  author?: { full_name: string | null; username: string | null } | null;
 }
 
 export interface Notification {

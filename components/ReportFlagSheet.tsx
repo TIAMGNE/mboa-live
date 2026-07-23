@@ -12,7 +12,15 @@ const REASONS: { value: string; label: string }[] = [
   { value: 'autre', label: 'Autre raison' }
 ];
 
-export default function ReportFlagSheet({ reportId, onClose }: { reportId: string; onClose: () => void }) {
+export default function ReportFlagSheet({
+  reportId,
+  commentId,
+  onClose
+}: {
+  reportId?: string;
+  commentId?: string;
+  onClose: () => void;
+}) {
   const { user } = useAuth();
   const [reason, setReason] = useState<string | null>(null);
   const [details, setDetails] = useState('');
@@ -25,7 +33,8 @@ export default function ReportFlagSheet({ reportId, onClose }: { reportId: strin
     setSending(true);
     setError(null);
     const { error: insertError } = await supabase.from('report_flags').insert({
-      report_id: reportId,
+      report_id: reportId ?? null,
+      comment_id: commentId ?? null,
       user_id: user.id,
       reason,
       details: details.trim() || null
