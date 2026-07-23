@@ -38,12 +38,27 @@ const config: Config = {
           '15%': { transform: 'scale(1.3)', opacity: '1' },
           '30%': { transform: 'scale(1)', opacity: '1' },
           '100%': { transform: 'scale(1.1)', opacity: '0' }
+        },
+        splashLogoIn: {
+          '0%': { opacity: '0', transform: 'scale(0.85)' },
+          '100%': { opacity: '1', transform: 'scale(1)' }
+        },
+        splashFadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' }
+        },
+        splashDot: {
+          '0%, 80%, 100%': { opacity: '0.25', transform: 'scale(0.8)' },
+          '40%': { opacity: '1', transform: 'scale(1)' }
         }
       },
       animation: {
         pulseRing: 'pulseRing 1.8s cubic-bezier(0.2,0.6,0.4,1) infinite',
         ticker: 'tickerScroll 32s linear infinite',
-        heartBurst: 'heartBurst 0.8s cubic-bezier(0.2,0.8,0.3,1) forwards'
+        heartBurst: 'heartBurst 0.8s cubic-bezier(0.2,0.8,0.3,1) forwards',
+        splashLogoIn: 'splashLogoIn 0.6s cubic-bezier(0.16,1,0.3,1) both',
+        splashFadeIn: 'splashFadeIn 0.5s ease 0.3s both',
+        splashDot: 'splashDot 1s ease-in-out infinite'
       }
     }
   },
